@@ -3,22 +3,17 @@ use soroban_sdk::{contract, contractimpl, Address, Bytes, BytesN, Env, String, V
 
 use crate::base::errors::SecondCrowdfundingError;
 use crate::base::{
-    errors::{CrowdfundingError, SecondCrowdfundingError, ValidationError},
-    errors::CrowdfundingError,
+    errors::{CrowdfundingError, ValidationError},
     events,
     reentrancy::{
         acquire_emergency_lock, reentrancy_lock_logic, release_emergency_lock, release_pool_lock,
     },
     types::{
-        ApplicationStatus, CampaignDetails, CampaignLifecycleStatus, CampaignMetrics, Contribution,
-        EmergencyWithdrawal, EventDetails, EventMetrics, MultiSigConfig, PoolConfig,
-        PoolContribution, PoolMetadata, PoolMetrics, PoolState, ScholarshipApplication, StorageKey,
-        MAX_DESCRIPTION_LENGTH, MAX_HASH_LENGTH, MAX_STRING_LENGTH, MAX_URL_LENGTH,
         ApplicationDetails, ApplicationStatus, CampaignDetails, CampaignLifecycleStatus,
         CampaignMetrics, Contribution, EmergencyWithdrawal, EventDetails, EventMetrics,
         MultiSigConfig, PoolConfig, PoolContribution, PoolMetadata, PoolMetrics, PoolState,
-        StorageKey, MAX_DESCRIPTION_LENGTH, MAX_HASH_LENGTH, MAX_STRING_LENGTH,
-        MAX_URL_LENGTH,
+        Role, ScholarshipApplication, StorageKey, MAX_DESCRIPTION_LENGTH, MAX_HASH_LENGTH,
+        MAX_STRING_LENGTH, MAX_URL_LENGTH,
     },
 };
 use crate::interfaces::application::ApplicationTrait;
@@ -2341,6 +2336,109 @@ impl ApplicationTrait for CrowdfundingContract {
             .instance()
             .get(&application_key)
             .ok_or(CrowdfundingError::ApplicationNotFound)
+    }
+
+    /// Require that the caller has the specified role
+    fn require_role(env: &Env, caller: &Address, role: Role) -> Result<(), CrowdfundingError> {
+        caller.require_auth();
+        
+        match role {
+            Role::Admin => {
+                let admin: Address = env
+                    .storage()
+                    .instance()
+                    .get(&StorageKey::Admin)
+                    .ok_or(CrowdfundingError::NotInitialized)?;
+                if *caller != admin {
+                    return Err(CrowdfundingError::Unauthorized);
+                }
+            }
+            Role::Oracle => {
+                // Check if caller is authorized oracle for any pool
+                // For now, we'll check if they're set as oracle in any pool
+                // In a real implementation, you might want a global oracle registry
+                return Err(CrowdfundingError::OracleUnauthorized);
+            }
+            Role::Validator => {
+                // Similar to oracle, check validator permissions
+                return Err(CrowdfundingError::Unauthorized);
+            }
+        }
+        Ok(())
+    }
+
+    /// Oracle-only function to resolve pool outcomes
+    fn oracle_resolve(
+        env: Env,
+        pool_id: u64,
+        outcome_descriptions: Vec<String>,
+        caller: Address,
+    ) -> Result<(), CrowdfundingError> {
+        // Enforce Oracle role
+        Self::require_role(&env, &caller, Role::Oracle)?;
+        
+        // Get pool configuration
+        let pool_key = StorageKey::Pool(pool_id);
+        let pool: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&pool_key)
+            .ok_or(CrowdfundingError::PoolNotFound)?;
+
+        // Check if caller is authorized oracle for this specific pool
+        if let Some(oracle_addr) = &pool.oracle {
+            if *oracle_addr != caller {
+                return Err(CrowdfundingError::OracleUnauthorized);
+            }
+        } else {
+            return Err(CrowdfundingError::OracleUnauthorized);
+        }
+
+        // Call resolve_pool with validation
+        Self::resolve_pool(env, pool_id, outcome_descriptions)
+    }
+
+    /// Resolve pool with outcome descriptions and invariant assertion
+    fn resolve_pool(
+        env: Env,
+        pool_id: u64,
+        outcome_descriptions: Vec<String>,
+    ) -> Result<(), CrowdfundingError> {
+        // Get pool configuration
+        let pool_key = StorageKey::Pool(pool_id);
+        let pool: PoolConfig = env
+            .storage()
+            .instance()
+            .get(&pool_key)
+            .ok_or(CrowdfundingError::PoolNotFound)?;
+
+        // Invariant assertion: Ensure vector length matches options_count
+        if let Some(expected_count) = pool.options_count {
+            assert_eq!(
+                outcome_descriptions.len() as u32,
+                expected_count,
+                "Outcome descriptions length must match options_count"
+            );
+            
+            // Additional validation to prevent index out of bounds
+            if outcome_descriptions.len() as u32 != expected_count {
+                return Err(CrowdfundingError::InvalidOutcomeDescriptions);
+            }
+        }
+
+        // Update pool state to completed
+        let state_key = StorageKey::PoolState(pool_id);
+        env.storage().instance().set(&state_key, &PoolState::Completed);
+
+        // Store outcome descriptions
+        let outcomes_key = StorageKey::PoolOutcomes(pool_id);
+        env.storage().instance().set(&outcomes_key, &outcome_descriptions);
+
+        // Emit resolution event
+        let now = env.ledger().timestamp();
+        events::pool_resolved(&env, pool_id, outcome_descriptions, now);
+
+        Ok(())
     }
 }
 

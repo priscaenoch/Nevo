@@ -228,3 +228,8 @@ pub fn application_rejected(env: &Env, admin: Address, cause: Address) {
     let topics = (symbol_short!("AppRej"), admin);
     env.events().publish(topics, cause);
 }
+
+pub fn pool_resolved(env: &Env, pool_id: u64, outcomes: Vec<String>, timestamp: u64) {
+    let topics = (symbol_short!("pool_res"), pool_id);
+    env.events().publish(topics, (outcomes, timestamp));
+}

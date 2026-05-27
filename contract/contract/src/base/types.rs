@@ -42,6 +42,10 @@ pub struct PoolConfig {
     pub token_address: Address,
     /// The address authorized to approve or reject scholarship applications for this pool.
     pub validator: Address,
+    /// The address authorized to act as oracle for automated resolution
+    pub oracle: Option<Address>,
+    /// Number of outcome options for pool resolution
+    pub options_count: Option<u32>,
 }
 
 /// Status of a scholarship application.
@@ -311,11 +315,21 @@ pub struct ApplicationDetails {
 
 #[contracttype]
 #[derive(Clone, Debug, Eq, PartialEq)]
+pub enum Role {
+    Admin,
+    Oracle,
+    Validator,
+}
+
+#[contracttype]
+#[derive(Clone, Debug, Eq, PartialEq)]
 pub enum StorageKey {
     Pool(u64),
     PoolState(u64),
     PoolMetrics(u64),
     AllCampaigns,
+    Application(u64, Address),
+    PoolOutcomes(u64),
     CampaignMetrics(BytesN<32>),
     CampaignDonor(BytesN<32>, Address),
     Contribution(BytesN<32>, Address),

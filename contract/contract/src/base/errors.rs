@@ -54,6 +54,8 @@ pub enum CrowdfundingError {
     InsufficientFees = 48,
     UserBlacklisted = 49,
     CampaignCancelled = 50,
+    OracleUnauthorized = 51,
+    InvalidOutcomeDescriptions = 52,
 }
 
 #[contracterror]
