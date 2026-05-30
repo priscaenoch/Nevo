@@ -1,6 +1,8 @@
 'use client';
 
 import React, { useEffect, useState, useMemo } from 'react';
+import Link from 'next/link';
+import { EmptyState } from '@/components/EmptyState';
 import { usePoolsStore } from '@/src/store/poolsStore';
 import { PoolCard, Pagination } from '@/components';
 
@@ -18,7 +20,12 @@ type SortOption = 'newest' | 'most-funded' | 'close-to-goal' | 'trending';
 type StatusFilter = 'All' | 'Active' | 'Completed';
 
 export default function BrowsePoolsPage() {
-  const { filteredPools, filters, setSearch, toggleCategory } = usePoolsStore();
+  const {
+    filteredPools,
+    filters,
+    setSearch,
+    toggleCategory,
+  } = usePoolsStore();
   const [searchInput, setSearchInput] = useState(filters.search);
 
   // Additional local filter and sort states
@@ -105,11 +112,17 @@ export default function BrowsePoolsPage() {
     setEndDate('');
     setSortBy('newest');
     setCurrentPage(1);
-    // Note: If store has categories, clear them too
+    // Clear store categories
     if (filters.categories.length > 0) {
       filters.categories.forEach((cat) => toggleCategory(cat));
     }
   };
+
+  const activeFilterCount = (searchInput ? 1 : 0) + 
+    (statusFilter !== 'All' ? 1 : 0) +
+    filters.categories.length +
+    (startDate ? 1 : 0) +
+    (endDate ? 1 : 0);
 
   return (
     <main className="mx-auto max-w-7xl px-6 py-10 flex-1 w-full">
@@ -327,26 +340,59 @@ export default function BrowsePoolsPage() {
             </div>
           </div>
 
+          {/* Applied Filters Display */}
+          {activeFilterCount > 0 && (
+            <div className="mb-4 flex flex-wrap items-center gap-2 rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-3 text-sm">
+              <span className="text-[var(--color-text-muted)]">
+                Applied filters:
+              </span>
+              {searchInput && (
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
+                  Search: {searchInput}
+                </span>
+              )}
+              {statusFilter !== 'All' && (
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
+                  Status: {statusFilter}
+                </span>
+              )}
+              {filters.categories.map((cat) => (
+                <span key={cat} className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
+                  {cat}
+                </span>
+              ))}
+              {startDate && (
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
+                  From: {startDate}
+                </span>
+              )}
+              {endDate && (
+                <span className="rounded-full border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-1 text-xs font-medium text-[var(--color-text)]">
+                  To: {endDate}
+                </span>
+              )}
+            </div>
+          )}
+
           {/* Grid or Empty State */}
           {processedPools.length === 0 ? (
-            <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-raised)]/35 py-24 px-6 text-center">
-              <div className="flex size-14 items-center justify-center rounded-full bg-[var(--color-surface)] border border-[var(--color-border)] text-[var(--color-text-muted)] mb-4">
-                <SearchIcon />
-              </div>
-              <h3 className="text-lg font-bold text-[var(--color-text)]">
-                No pools match your filters
-              </h3>
-              <p className="mt-2 text-sm text-[var(--color-text-muted)] max-w-sm leading-relaxed">
-                We couldn&apos;t find any fundraising campaigns matching these
-                selections. Try clearing some filters.
-              </p>
-              <button
-                onClick={handleClearAllFilters}
-                className="mt-6 inline-flex items-center gap-2 rounded-full bg-brand-600 px-6 py-2.5 text-xs font-semibold text-white hover:bg-brand-700 transition-colors"
-              >
-                Clear all filters
-              </button>
-            </div>
+            <EmptyState
+              variant="bordered"
+              icon="search"
+              iconTone="muted"
+              title="No results found"
+              description="We couldn't find any pools matching your search criteria. Try adjusting your filters or search term."
+              action={{
+                label: 'Clear all filters',
+                onClick: handleClearAllFilters,
+                variant: 'primary',
+              }}
+              secondaryAction={{
+                label: 'Create a Pool',
+                href: '/pools/new',
+                variant: 'link',
+              }}
+            />
           ) : (
             <div className="space-y-10">
               {/* Grid of Pool Cards */}
@@ -357,19 +403,21 @@ export default function BrowsePoolsPage() {
               </div>
 
               {/* Pagination Controls */}
-              <div className="border-t border-[var(--color-border)] pt-6">
-                <Pagination
-                  totalItems={processedPools.length}
-                  itemsPerPage={itemsPerPage}
-                  currentPage={currentPage}
-                  onPageChange={(page) => {
-                    setCurrentPage(page);
-                    // Smooth scroll back to top of section on page switch
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                  }}
-                  showGoToPage={processedPools.length > itemsPerPage * 5}
-                />
-              </div>
+              {processedPools.length > itemsPerPage && (
+                <div className="border-t border-[var(--color-border)] pt-6">
+                  <Pagination
+                    totalItems={processedPools.length}
+                    itemsPerPage={itemsPerPage}
+                    currentPage={currentPage}
+                    onPageChange={(page) => {
+                      setCurrentPage(page);
+                      // Smooth scroll back to top of section on page switch
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                    }}
+                    showGoToPage={processedPools.length > itemsPerPage * 5}
+                  />
+                </div>
+              )}
             </div>
           )}
         </section>
