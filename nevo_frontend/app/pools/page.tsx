@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
-import { usePoolsStore, type Pool } from '@/src/store/poolsStore';
+import { usePoolsStore } from '@/src/store/poolsStore';
+import { PoolCard } from '@/components';
 
 // We extract categories from MOCK_POOLS dynamically or define them statically
 const CATEGORIES = [
@@ -126,62 +126,6 @@ export default function BrowsePoolsPage() {
         </section>
       </div>
     </main>
-  );
-}
-
-function PoolCard({ pool }: { pool: Pool }) {
-  const pct = Math.min(100, Math.round((pool.raised / pool.target) * 100));
-
-  return (
-    <Link
-      href={`/pools/${pool.id}`}
-      className="group flex flex-col overflow-hidden rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface)] transition-all hover:-translate-y-1 hover:shadow-md focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-    >
-      <div
-        className="h-24 w-full"
-        style={{ backgroundColor: pool.imageColor || '#e5e7eb' }}
-      />
-      <div className="flex flex-1 flex-col p-5">
-        <div className="mb-2 flex items-center justify-between gap-2">
-          <span className="inline-flex rounded-full bg-[var(--color-surface-raised)] px-2 py-0.5 text-xs font-medium text-[var(--color-text-muted)]">
-            {pool.category}
-          </span>
-          <span
-            className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${
-              pool.status === 'Active'
-                ? 'bg-success-light text-success-dark'
-                : 'bg-[var(--color-border)] text-[var(--color-text-muted)]'
-            }`}
-          >
-            {pool.status}
-          </span>
-        </div>
-        <h3 className="font-bold text-lg leading-tight group-hover:text-brand-600 transition-colors line-clamp-1">
-          {pool.title}
-        </h3>
-        <p className="mt-2 text-sm text-[var(--color-text-muted)] line-clamp-2 flex-1">
-          {pool.description}
-        </p>
-
-        <div className="mt-6">
-          <div className="mb-1.5 flex items-center justify-between text-xs font-medium">
-            <span className="text-[var(--color-text)]">
-              {pool.raised.toLocaleString()} XLM raised
-            </span>
-            <span className="text-[var(--color-text-muted)]">{pct}%</span>
-          </div>
-          <div className="h-1.5 w-full overflow-hidden rounded-full bg-[var(--color-surface-raised)]">
-            <div
-              className="h-full rounded-full bg-brand-500 transition-all duration-500 ease-out"
-              style={{ width: `${pct}%` }}
-            />
-          </div>
-          <div className="mt-2 text-xs text-[var(--color-text-muted)]">
-            Goal: {pool.target.toLocaleString()} XLM
-          </div>
-        </div>
-      </div>
-    </Link>
   );
 }
 
