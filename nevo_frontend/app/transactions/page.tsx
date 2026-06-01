@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // TODO: Replace with real API data once backend transaction endpoints are implemented
 export type TxType = 'donation' | 'pool_creation' | 'withdrawal';
@@ -140,6 +141,12 @@ const MOCK_TRANSACTIONS: Transaction[] = [
     txHash: 'lmn234opq567',
   },
 ];
+import {
+  MOCK_TRANSACTIONS,
+  type Transaction,
+  type TxStatus,
+  type TxType,
+} from '@/src/lib/mockTransactions';
 
 const PAGE_SIZE = 8;
 
@@ -252,7 +259,6 @@ function SearchIcon() {
   );
 }
 
-
 const TYPE_ICON: Record<TxType, React.ReactNode> = {
   donation: <DonationIcon />,
   pool_creation: <PoolIcon />,
@@ -267,7 +273,7 @@ const TYPE_ICON_BG: Record<TxType, string> = {
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TxType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<TxStatus | 'all'>('all');
@@ -573,3 +579,10 @@ function StatusBadge({ status }: { status: TxStatus }) {
   );
 }
 
+export default function TransactionsPage() {
+  return (
+    <ProtectedRoute>
+      <TransactionsPageContent />
+    </ProtectedRoute>
+  );
+}

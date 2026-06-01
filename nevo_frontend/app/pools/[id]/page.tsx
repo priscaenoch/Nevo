@@ -1,10 +1,11 @@
-﻿'use client';
+'use client';
 
 import Link from 'next/link';
 import { useParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { DonateModal } from '@/components/DonateModal';
 import { EmptyState } from '@/components/EmptyState';
+import { SocialShareButtons } from '@/components/SocialShareButtons';
 import { WalletAddress } from '@/components/WalletAddress';
 import type { Pool } from '@/src/store/poolsStore';
 import { useWalletStore } from '@/src/store/walletStore';
@@ -158,18 +159,6 @@ export default function PoolDetailPage() {
   if (notFound || !pool) {
     return (
       <main className="mx-auto max-w-3xl px-4 py-10 sm:px-6 sm:py-16">
-        <div className="flex flex-col items-center gap-4 py-12 text-center">
-          <h1 className="text-2xl font-bold">Pool not found</h1>
-          <p className="text-sm text-[var(--color-text-muted)]">
-            This pool does not exist or has been removed.
-          </p>
-          <Link
-            href="/pools"
-            className="rounded-full bg-brand-600 px-6 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
-          >
-            Browse Pools
-          </Link>
-        </div>
         <EmptyState
           icon="not-found"
           iconTone="muted"
@@ -197,7 +186,10 @@ export default function PoolDetailPage() {
           Pools
         </Link>
         <ChevronRightIcon />
-        <span className="font-medium text-[var(--color-text)]" aria-current="page">
+        <span
+          className="font-medium text-[var(--color-text)]"
+          aria-current="page"
+        >
           {pool.title}
         </span>
       </nav>
@@ -270,7 +262,10 @@ export default function PoolDetailPage() {
           )}
 
           <section aria-labelledby="contributors-heading">
-            <h2 id="contributors-heading" className="mb-4 text-lg font-semibold">
+            <h2
+              id="contributors-heading"
+              className="mb-4 text-lg font-semibold"
+            >
               Contributors
               <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
                 ({contributors.length})
@@ -278,41 +273,43 @@ export default function PoolDetailPage() {
             </h2>
 
             {contributors.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-8 text-center">
-                <p className="font-semibold">No contributions yet</p>
-                <p className="mt-1 text-sm text-[var(--color-text-muted)]">
-                  Be the first to support this pool.
-                </p>
-                {isActive && (
-                  <button
-                    type="button"
-                    onClick={() => setDonateOpen(true)}
-                    className="mt-4 rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
-                  >
-                    Donate Now
-                  </button>
-                )}
-              </div>
-              <EmptyState
-                variant="compact"
-                icon="contributors"
-                iconTone="muted"
-                title="No contributions yet"
-                description="Be the first to support this pool."
-                action={
-                  isActive
-                    ? {
-                        label: 'Donate Now',
-                        onClick: () => setDonateOpen(true),
-                      }
-                    : undefined
-                }
-                steps={[
-                  { text: 'Connect your Stellar wallet' },
-                  { text: 'Choose an amount to donate' },
-                  { text: 'Confirm the transaction in Freighter' },
-                ]}
-              />
+              <>
+                <div className="rounded-xl border border-dashed border-[var(--color-border)] bg-[var(--color-surface-raised)] px-4 py-8 text-center">
+                  <p className="font-semibold">No contributions yet</p>
+                  <p className="mt-1 text-sm text-[var(--color-text-muted)]">
+                    Be the first to support this pool.
+                  </p>
+                  {isActive && (
+                    <button
+                      type="button"
+                      onClick={() => setDonateOpen(true)}
+                      className="mt-4 rounded-full bg-brand-600 px-5 py-2 text-sm font-semibold text-white hover:bg-brand-700 transition-colors"
+                    >
+                      Donate Now
+                    </button>
+                  )}
+                </div>
+                <EmptyState
+                  variant="compact"
+                  icon="contributors"
+                  iconTone="muted"
+                  title="No contributions yet"
+                  description="Be the first to support this pool."
+                  action={
+                    isActive
+                      ? {
+                          label: 'Donate Now',
+                          onClick: () => setDonateOpen(true),
+                        }
+                      : undefined
+                  }
+                  steps={[
+                    { text: 'Connect your Stellar wallet' },
+                    { text: 'Choose an amount to donate' },
+                    { text: 'Confirm the transaction in Freighter' },
+                  ]}
+                />
+              </>
             ) : (
               <ul className="flex flex-col gap-2" role="list">
                 {contributors.map((c, i) => (
@@ -346,16 +343,18 @@ export default function PoolDetailPage() {
             </h2>
 
             {timeline.length === 0 ? (
-              <p className="text-sm text-[var(--color-text-muted)]">
-                Pool milestones and donations will appear here as they happen.
-              </p>
-              <EmptyState
-                variant="compact"
-                icon="history"
-                iconTone="muted"
-                title="No activity yet"
-                description="Pool milestones and donations will appear here as they happen."
-              />
+              <>
+                <p className="text-sm text-[var(--color-text-muted)]">
+                  Pool milestones and donations will appear here as they happen.
+                </p>
+                <EmptyState
+                  variant="compact"
+                  icon="history"
+                  iconTone="muted"
+                  title="No activity yet"
+                  description="Pool milestones and donations will appear here as they happen."
+                />
+              </>
             ) : (
               <ol
                 className="relative border-l border-[var(--color-border)] pl-6"
@@ -388,7 +387,10 @@ export default function PoolDetailPage() {
           </section>
         </div>
 
-        <aside className="flex flex-col gap-6" aria-label="Pool funding details">
+        <aside
+          className="flex flex-col gap-6"
+          aria-label="Pool funding details"
+        >
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-6">
             <p className="text-3xl font-bold text-brand-600">
               {pool.raised.toLocaleString()}{' '}
@@ -447,6 +449,12 @@ export default function PoolDetailPage() {
               </p>
             )}
           </div>
+
+          <SocialShareButtons
+            poolId={pool.id}
+            poolTitle={pool.title}
+            customMessage={`Check out this amazing pool: "${pool.title}" - Support the cause and make a difference! 🌟`}
+          />
         </aside>
       </div>
 
@@ -545,7 +553,11 @@ function TagIcon() {
         strokeLinejoin="round"
         d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
       />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 6h.008v.008H6V6Z"
+      />
     </svg>
   );
 }
