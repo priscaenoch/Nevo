@@ -36,6 +36,31 @@ Nevo/
 
 ---
 
+## Setup (Do This Once After Cloning)
+
+Run from the **repo root**:
+
+```bash
+npm install        # installs Husky and wires up git hooks
+```
+
+Then install the deps for your layer:
+
+```bash
+# Frontend
+cd nevo_frontend && npm install
+
+# Backend
+cd nevo_server && npm install
+
+# Contract
+cd nevo_contract  # no npm needed — uses cargo
+```
+
+Without the root `npm install`, the pre-commit and pre-push hooks will not run, and broken code can be pushed.
+
+---
+
 ## Before You Start
 
 **Identify the scope of the task.** Every task belongs to exactly one layer:
@@ -178,6 +203,18 @@ npm run build                 # verify it still builds
 ```
 
 Always commit `package.json` and `package-lock.json` together in the same commit. Never edit `package.json` manually and push without regenerating the lock file.
+
+### `@stellar/stellar-sdk` API names (v13+)
+
+The project uses `@stellar/stellar-sdk@^13.x`. The namespace was reorganised in v12 — AI training data often references the old names:
+
+| Old (v11 and earlier) | Correct (v12+) |
+|---|---|
+| `SorobanRpc` | `Soroban` |
+| `SorobanRpc.Server` | `Soroban.Server` |
+| `SorobanRpc.Api` | `Soroban.Api` |
+
+If the TypeScript compiler says `has no exported member 'SorobanRpc'. Did you mean 'Soroban'?` — use `Soroban`.
 
 ### NestJS version compatibility
 
