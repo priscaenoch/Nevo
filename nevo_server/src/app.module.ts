@@ -1,8 +1,7 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { User } from './users/user.entity';
+import { ScheduleModule } from '@nestjs/schedule';
+import { SyncModule } from './sync/sync.module.js';
 import { Pool } from './pools/pool.entity';
 import { PoolsModule } from './pools/pools.module';
 
@@ -19,6 +18,8 @@ import { PoolsModule } from './pools/pools.module';
       migrations: ['dist/migrations/*.js'],
       synchronize: false,
     }),
+    ScheduleModule.forRoot(),
+    SyncModule,
     PoolsModule,
   ],
   controllers: [AppController],
