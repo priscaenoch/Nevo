@@ -1,40 +1,72 @@
 import { Injectable } from '@nestjs/common';
-import { GetPoolsDto } from './dto/get-pools.dto';
-import { MockPoolRepository } from './pools.repository';
-import { Pool } from './entities/pool.entity';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Pool } from './pool.entity';
+import type { CreatePoolDto, UpdatePoolDto } from './pools.controller';
+
+export interface ChainPoolData {
+  contractPoolId: string;
+  creatorWallet: string;
+  goal: string;
+}
 
 @Injectable()
 export class PoolsService {
-  constructor(private readonly poolsRepository: MockPoolRepository) {}
+  constructor(
+    @InjectRepository(Pool)
+    private readonly poolRepo: Repository<Pool>,
+  ) {}
 
-  async findAll(query: GetPoolsDto): Promise<{
-    data: Pool[];
-    total: number;
-    page: number;
-    limit: number;
-  }> {
-    const page = query.page ? Math.max(1, parseInt(query.page, 10)) : 1;
-    const limit = query.limit ? Math.max(1, parseInt(query.limit, 10)) : 10;
-
-    // Standard skip conversion
-    const skip = (page - 1) * limit;
-
-    const [data, total] = await this.poolsRepository.findAndCount({
-      where: {
-        search: query.search,
-        category: query.category,
-        status: query.status,
-      },
-      order: { createdAt: 'DESC' },
-      take: limit,
-      skip,
+  async upsertFromChain(data: ChainPoolData): Promise<Pool> {
+    const existing = await this.poolRepo.findOne({
+      where: { contractPoolId: data.contractPoolId },
     });
 
-    return {
-      data,
-      total,
-      page,
-      limit,
-    };
+    if (existing) {
+      existing.creatorWallet = data.creatorWallet;
+      existing.goal = data.goal;
+      return this.poolRepo.save(existing);
+    }
+
+    return this.poolRepo.save(
+      this.poolRepo.create({
+        contractPoolId: data.contractPoolId,
+        creatorWallet: data.creatorWallet,
+        goal: data.goal,
+      }),
+    );
+  }
+
+  async create(dto: CreatePoolDto): Promise<Pool> {
+    return this.poolRepo.save(
+      this.poolRepo.create({
+        contractPoolId: dto.contractPoolId,
+        creatorWallet: dto.creatorWallet,
+        goal: dto.goal,
+        title: dto.title ?? null,
+        description: dto.description ?? null,
+        imageUrl: dto.imageUrl ?? null,
+      }),
+    );
+  }
+
+  async updateMeta(
+    contractPoolId: string,
+    dto: UpdatePoolDto,
+  ): Promise<Pool | null> {
+    const pool = await this.poolRepo.findOne({ where: { contractPoolId } });
+    if (!pool) return null;
+    if (dto.description !== undefined) pool.description = dto.description;
+    if (dto.imageUrl !== undefined) pool.imageUrl = dto.imageUrl;
+    return this.poolRepo.save(pool);
+  }
+
+  async findByContractId(contractPoolId: string): Promise<Pool | null> {
+    return this.poolRepo.findOne({ where: { contractPoolId } });
+  }
+
+  buildWithdrawTx(pool: Pool): { unsignedXdr: string; poolId: string } {
+    // TODO: replace with real Stellar transaction build calling contract.withdraw (#657)
+    return { unsignedXdr: 'placeholder_xdr', poolId: pool.contractPoolId };
   }
 }

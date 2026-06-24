@@ -3,7 +3,11 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import ConnectWallet from '@/components/ConnectWallet';
-import { MobileMenu, MobileMenuButton, NAV_LINKS } from '@/components/MobileMenu';
+import {
+  MobileMenu,
+  MobileMenuButton,
+  NAV_LINKS,
+} from '@/components/MobileMenu';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export default function Navbar() {
@@ -38,7 +42,7 @@ export default function Navbar() {
                 href={link.href}
                 className="font-medium text-[var(--color-text-muted)] transition-colors hover:text-[var(--color-text)] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 rounded"
               >
-                {link.name}
+                {link.label}
               </Link>
             ))}
             <ThemeToggle />

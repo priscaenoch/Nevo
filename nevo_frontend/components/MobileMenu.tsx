@@ -6,11 +6,13 @@ import ConnectWallet from '@/components/ConnectWallet';
 import ThemeToggle from '@/components/ThemeToggle';
 
 export const NAV_LINKS = [
-  { name: 'Home', href: '/' },
-  { name: 'Pools', href: '/pools' },
-  { name: 'Transactions', href: '/transactions' },
-  { name: 'Dashboard', href: '/dashboard' },
-  { name: 'Create Pool', href: '/pools/new' },
+  { label: 'Home', href: '/' },
+  { label: 'Pools', href: '/pools' },
+  { label: 'Donations', href: '/donations' },
+  { label: 'Transactions', href: '/transactions' },
+  { label: 'Dashboard', href: '/dashboard' },
+  { label: 'Profile', href: '/profile' },
+  { label: 'Create Pool', href: '/pools/new' },
 ] as const;
 
 const FOCUSABLE =
@@ -22,8 +24,8 @@ interface MobileMenuProps {
 }
 
 export function MobileMenu({ open, onClose }: MobileMenuProps) {
-  const panelRef = useRef<HTMLDivElement>(null);
-  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
   const titleId = useId();
 
   const handleKeyDown = useCallback(
@@ -37,7 +39,9 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
       const focusable = Array.from(
         panelRef.current.querySelectorAll<HTMLElement>(FOCUSABLE)
-      ).filter((el) => !el.hasAttribute('disabled') && el.offsetParent !== null);
+      ).filter(
+        (el) => !el.hasAttribute('disabled') && el.offsetParent !== null
+      );
 
       if (focusable.length === 0) return;
 
@@ -106,7 +110,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
             ref={closeButtonRef}
             type="button"
             onClick={onClose}
-            className="flex size-9 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+            className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             aria-label="Close menu"
           >
             <CloseIcon />
@@ -115,7 +119,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
 
         <nav
           className="flex flex-1 flex-col gap-1 overflow-y-auto px-3 py-4"
-          aria-label="Mobile navigation"
+          aria-label="Menu"
         >
           {NAV_LINKS.map((link) => (
             <Link
@@ -124,7 +128,7 @@ export function MobileMenu({ open, onClose }: MobileMenuProps) {
               onClick={onClose}
               className="rounded-lg px-3 py-2.5 text-base font-medium text-[var(--color-text)] hover:bg-[var(--color-surface-raised)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
             >
-              {link.name}
+              {link.label}
             </Link>
           ))}
         </nav>
@@ -188,7 +192,7 @@ export function MobileMenuButton({
   return (
     <button
       type="button"
-      className="flex size-9 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:hidden"
+      className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-[var(--color-text-muted)] hover:bg-[var(--color-surface-raised)] hover:text-[var(--color-text)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600 lg:hidden"
       onClick={onOpen}
       aria-expanded={open}
       aria-controls="mobile-menu-drawer"

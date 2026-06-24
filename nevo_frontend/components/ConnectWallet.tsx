@@ -47,7 +47,6 @@ export default function ConnectWallet() {
         <button
           onClick={handleConnect}
           className="rounded-full bg-brand-600 px-4 py-1.5 text-sm font-medium text-white hover:bg-brand-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
-          aria-label="Connect Freighter wallet"
         >
           Connect Wallet
         </button>
@@ -56,7 +55,8 @@ export default function ConnectWallet() {
             {error}
           </p>
         )}
-      </div>    );
+      </div>
+    );
   }
 
   return (
@@ -99,7 +99,6 @@ export default function ConnectWallet() {
               setOpen(false);
             }}
             className="w-full rounded-lg border border-[var(--color-border)] py-1.5 text-sm text-red-500 hover:bg-red-50 dark:hover:bg-red-950 transition-colors"
-            aria-label="Disconnect wallet"
           >
             Disconnect
           </button>

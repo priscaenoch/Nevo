@@ -36,9 +36,15 @@ dist/
 # Text and Markdown files
 *.txt
 *.md
+!readme.md
 !README.md
+!contribution.md
 !Contribution.md
+!AGENTS.md
 !Agents.md
+
+# Local plans — not committed, stays on each contributor's machine
+plans/
 
 # IDE and editor files
 .vscode/

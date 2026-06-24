@@ -1,60 +1,71 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { PoolsService } from './pools.service';
-import { MockPoolRepository } from './pools.repository';
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { PoolsService, ChainPoolData } from './pools.service';
+import { Pool } from './pool.entity';
 
 describe('PoolsService', () => {
-  let service: PoolsService;
+  const chainData: ChainPoolData = {
+    contractPoolId: 'pool-1',
+    creatorWallet: 'GWALLET',
+    goal: '10000',
+  };
 
-  beforeEach(async () => {
-    const module: TestingModule = await Test.createTestingModule({
-      providers: [PoolsService, MockPoolRepository],
-    }).compile();
+  it('creates a new pool when none exists', async () => {
+    const { service, savedArg } = await buildService(null);
 
-    service = module.get<PoolsService>(PoolsService);
+    await service.upsertFromChain(chainData);
+
+    expect(savedArg()).toMatchObject(chainData);
   });
 
-  it('should be defined', () => {
-    expect(service).toBeDefined();
-  });
+  it('updates chain fields without overwriting off-chain metadata', async () => {
+    const existing: Pool = {
+      id: 'uuid-1',
+      contractPoolId: 'pool-1',
+      creatorWallet: 'GOLD',
+      goal: '5000',
+      title: 'Existing Title',
+      description: 'Existing description',
+      imageUrl: 'https://example.com/img.png',
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
+    const { service, savedArg } = await buildService(existing);
 
-  it('should return a paginated list of pools with default limits', async () => {
-    const result = await service.findAll({});
-    expect(result.data).toBeDefined();
-    expect(result.data.length).toBeLessThanOrEqual(10);
-    expect(result.total).toBe(15);
-    expect(result.page).toBe(1);
-    expect(result.limit).toBe(10);
-  });
+    await service.upsertFromChain(chainData);
 
-  it('should handle pagination offset', async () => {
-    const result = await service.findAll({ page: '2', limit: '5' });
-    expect(result.data.length).toBe(5);
-    expect(result.total).toBe(15);
-    expect(result.page).toBe(2);
-    expect(result.limit).toBe(5);
-  });
-
-  it('should filter by category (exact match case-insensitively)', async () => {
-    const result = await service.findAll({ category: 'Environment' });
-    expect(result.data.every((p) => p.category.toLowerCase() === 'environment')).toBe(true);
-    expect(result.total).toBe(3); // Garden, Reforestation, Solar
-  });
-
-  it('should filter by status (exact match case-insensitively)', async () => {
-    const result = await service.findAll({ status: 'Completed' });
-    expect(result.data.every((p) => p.status.toLowerCase() === 'completed')).toBe(true);
-  });
-
-  it('should filter by search text (case-insensitive title or description)', async () => {
-    const result = await service.findAll({ search: 'Stellar' });
-    expect(result.data.length).toBe(2); // Open Source Dev Fund, Stellar Smart Contract Auditing
-  });
-
-  it('should sort by createdAt DESC by default', async () => {
-    const result = await service.findAll({});
-    const dates = result.data.map((p) => p.createdAt.getTime());
-    for (let i = 0; i < dates.length - 1; i++) {
-      expect(dates[i]).toBeGreaterThanOrEqual(dates[i + 1]);
-    }
+    const saved = savedArg();
+    expect(saved.creatorWallet).toBe('GWALLET');
+    expect(saved.goal).toBe('10000');
+    expect(saved.title).toBe('Existing Title');
+    expect(saved.description).toBe('Existing description');
+    expect(saved.imageUrl).toBe('https://example.com/img.png');
   });
 });
+
+async function buildService(existing: Pool | null) {
+  let lastSaved: Pool | undefined;
+
+  const repo = {
+    findOne: jest.fn().mockResolvedValue(existing),
+    save: jest.fn().mockImplementation((p: Pool) => {
+      lastSaved = p;
+      return Promise.resolve(p);
+    }),
+    create: jest
+      .fn()
+      .mockImplementation((d: Partial<Pool>) => ({ ...d }) as Pool),
+  };
+
+  const module: TestingModule = await Test.createTestingModule({
+    providers: [
+      PoolsService,
+      { provide: getRepositoryToken(Pool), useValue: repo },
+    ],
+  }).compile();
+
+  return {
+    service: module.get(PoolsService),
+    savedArg: () => lastSaved as Pool,
+  };
+}

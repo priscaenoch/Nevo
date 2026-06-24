@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { EmptyState } from '@/components/EmptyState';
+import ProtectedRoute from '@/components/ProtectedRoute';
 
 // TODO: Replace with real API data once backend transaction endpoints are implemented
 export type TxType = 'donation' | 'pool_creation' | 'withdrawal';
@@ -252,7 +253,6 @@ function SearchIcon() {
   );
 }
 
-
 const TYPE_ICON: Record<TxType, React.ReactNode> = {
   donation: <DonationIcon />,
   pool_creation: <PoolIcon />,
@@ -267,7 +267,7 @@ const TYPE_ICON_BG: Record<TxType, string> = {
 
 /* ── Main Page ──────────────────────────────────────────────────────────── */
 
-export default function TransactionsPage() {
+function TransactionsPageContent() {
   const [search, setSearch] = useState('');
   const [typeFilter, setTypeFilter] = useState<TxType | 'all'>('all');
   const [statusFilter, setStatusFilter] = useState<TxStatus | 'all'>('all');
@@ -573,3 +573,10 @@ function StatusBadge({ status }: { status: TxStatus }) {
   );
 }
 
+export default function TransactionsPage() {
+  return (
+    <ProtectedRoute>
+      <TransactionsPageContent />
+    </ProtectedRoute>
+  );
+}

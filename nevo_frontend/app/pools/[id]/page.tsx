@@ -94,26 +94,6 @@ interface TimelineEvent {
   amount?: number;
 }
 
-const MOCK_TIMELINE: Record<string, TimelineEvent[]> = {
-  '1': [
-    { id: 'e1', label: 'Pool created', date: '2025-03-01' },
-    {
-      id: 'e2',
-      label: 'First donation received',
-      date: '2025-03-05',
-      amount: 500,
-    },
-  ],
-  '2': [
-    { id: 'e1', label: 'Pool created', date: '2025-01-15' },
-    { id: 'e2', label: 'Goal reached', date: '2025-02-01' },
-  ],
-  '3': [
-    { id: 'e1', label: 'Pool created', date: '2024-11-10' },
-    { id: 'e2', label: 'Pool completed', date: '2024-12-31' },
-  ],
-};
-
 const MOCK_LAST_UPDATED: Record<string, string> = {
   '1': '2025-04-15',
   '2': '2025-02-01',
@@ -125,7 +105,6 @@ export default function PoolDetailPage() {
   const { publicKey, initialize } = useWalletStore();
   const [pool, setPool] = useState<Pool | null>(null);
   const [contributors, setContributors] = useState<Contributor[]>([]);
-  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [notFound, setNotFound] = useState(false);
   const [donateOpen, setDonateOpen] = useState(false);
@@ -144,7 +123,6 @@ export default function PoolDetailPage() {
       } else {
         setPool(found);
         setContributors(MOCK_CONTRIBUTORS[id] ?? []);
-        setTimeline(MOCK_TIMELINE[id] ?? []);
       }
       setLoading(false);
     }, 300);
@@ -169,6 +147,7 @@ export default function PoolDetailPage() {
     );
   }
 
+  const timeline: TimelineEvent[] = [];
   const pct = Math.min(100, Math.round((pool.raised / pool.target) * 100));
   const isOwner = publicKey !== null && publicKey === pool.creator;
   const isCompleted = pool.status === 'Completed';
@@ -185,7 +164,10 @@ export default function PoolDetailPage() {
           Pools
         </Link>
         <ChevronRightIcon />
-        <span className="font-medium text-[var(--color-text)]" aria-current="page">
+        <span
+          className="font-medium text-[var(--color-text)]"
+          aria-current="page"
+        >
           {pool.title}
         </span>
       </nav>
@@ -258,7 +240,10 @@ export default function PoolDetailPage() {
           )}
 
           <section aria-labelledby="contributors-heading">
-            <h2 id="contributors-heading" className="mb-4 text-lg font-semibold">
+            <h2
+              id="contributors-heading"
+              className="mb-4 text-lg font-semibold"
+            >
               Contributors
               <span className="ml-2 text-sm font-normal text-[var(--color-text-muted)]">
                 ({contributors.length})
@@ -358,7 +343,10 @@ export default function PoolDetailPage() {
           </section>
         </div>
 
-        <aside className="flex flex-col gap-6" aria-label="Pool funding details">
+        <aside
+          className="flex flex-col gap-6"
+          aria-label="Pool funding details"
+        >
           <div className="rounded-2xl border border-[var(--color-border)] bg-[var(--color-surface-raised)] p-6">
             <p className="text-3xl font-bold text-brand-600">
               {pool.raised.toLocaleString()}{' '}
@@ -417,6 +405,7 @@ export default function PoolDetailPage() {
               </p>
             )}
           </div>
+
         </aside>
       </div>
 
@@ -515,7 +504,11 @@ function TagIcon() {
         strokeLinejoin="round"
         d="M9.568 3H5.25A2.25 2.25 0 0 0 3 5.25v4.318c0 .597.237 1.17.659 1.591l9.581 9.581c.699.699 1.78.872 2.607.33a18.095 18.095 0 0 0 5.223-5.223c.542-.827.369-1.908-.33-2.607L11.16 3.66A2.25 2.25 0 0 0 9.568 3Z"
       />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6h.008v.008H6V6Z" />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M6 6h.008v.008H6V6Z"
+      />
     </svg>
   );
 }
