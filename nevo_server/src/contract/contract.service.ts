@@ -12,10 +12,15 @@ import {
 import { rpc as StellarRpc } from '@stellar/stellar-sdk';
 import { StellarError } from './stellar.error.js';
 
-const CONTRACT_ID = process.env.CONTRACT_ID ?? 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
-const NETWORK_PASSPHRASE = process.env.STELLAR_NETWORK === 'mainnet' ? Networks.PUBLIC : Networks.TESTNET;
-const HORIZON_URL = process.env.HORIZON_URL ?? 'https://horizon-testnet.stellar.org';
-const SOROBAN_URL = process.env.SOROBAN_URL ?? 'https://soroban-testnet.stellar.org';
+const CONTRACT_ID =
+  process.env.CONTRACT_ID ??
+  'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
+const NETWORK_PASSPHRASE =
+  process.env.STELLAR_NETWORK === 'mainnet'
+    ? Networks.PUBLIC
+    : Networks.TESTNET;
+const SOROBAN_URL =
+  process.env.SOROBAN_URL ?? 'https://soroban-testnet.stellar.org';
 const SOURCE_SECRET = process.env.SOURCE_SECRET_KEY ?? '';
 
 @Injectable()
@@ -117,7 +122,9 @@ export class ContractService {
   async getContributionOnChain(poolId: number, donor: string): Promise<bigint> {
     try {
       const server = new StellarRpc.Server(SOROBAN_URL);
-      const keypair = SOURCE_SECRET ? Keypair.fromSecret(SOURCE_SECRET) : Keypair.random();
+      const keypair = SOURCE_SECRET
+        ? Keypair.fromSecret(SOURCE_SECRET)
+        : Keypair.random();
       const account = await server.getAccount(keypair.publicKey());
       const tx = new TransactionBuilder(account, {
         fee: BASE_FEE,
@@ -136,7 +143,7 @@ export class ContractService {
       const result = await server.simulateTransaction(tx);
       if ('error' in result) return 0n;
 
-      const simResult = result as StellarRpc.Api.SimulateTransactionSuccessResponse;
+      const simResult = result;
       const retVal = simResult.result?.retval;
       if (!retVal) return 0n;
 
@@ -144,7 +151,9 @@ export class ContractService {
       if (val.switch().name === 'scvI128' || val.switch().name === 'scvU128') {
         const parts = val.i128?.() ?? val.u128?.();
         if (!parts) return 0n;
-        return (BigInt(parts.hi().toString()) << 64n) | BigInt(parts.lo().toString());
+        return (
+          (BigInt(parts.hi().toString()) << 64n) | BigInt(parts.lo().toString())
+        );
       }
       return 0n;
     } catch {
@@ -156,7 +165,8 @@ export class ContractService {
     if (err instanceof StellarError) return err;
     const msg = (err as { message?: string })?.message ?? String(err);
     if (msg.includes('tx_bad_auth')) return new StellarError('tx_bad_auth');
-    if (msg.includes('op_underfunded')) return new StellarError('op_underfunded');
+    if (msg.includes('op_underfunded'))
+      return new StellarError('op_underfunded');
     return new StellarError(msg);
   }
 }

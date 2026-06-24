@@ -1,9 +1,12 @@
 import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { ScheduleModule } from '@nestjs/schedule';
+import { AppController } from './app.controller.js';
+import { AppService } from './app.service.js';
 import { SyncModule } from './sync/sync.module.js';
-import { Pool } from './pools/pool.entity';
-import { PoolsModule } from './pools/pools.module';
+import { Pool } from './pools/pool.entity.js';
+import { PoolsModule } from './pools/pools.module.js';
+import { User } from './users/user.entity.js';
 
 @Module({
   imports: [

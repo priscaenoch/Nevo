@@ -50,7 +50,10 @@ export class PoolsService {
     );
   }
 
-  async updateMeta(contractPoolId: string, dto: UpdatePoolDto): Promise<Pool | null> {
+  async updateMeta(
+    contractPoolId: string,
+    dto: UpdatePoolDto,
+  ): Promise<Pool | null> {
     const pool = await this.poolRepo.findOne({ where: { contractPoolId } });
     if (!pool) return null;
     if (dto.description !== undefined) pool.description = dto.description;
