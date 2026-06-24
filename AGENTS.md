@@ -158,3 +158,35 @@ CD (`cd.yml`) runs on merge to `main` and deploys the frontend to Vercel.
 - **Bundling multiple features in one PR** — keep PRs small and focused
 - **Skipping the build check** — if it doesn't build locally, it will fail CI
 - **Introducing i18n, analytics, or tracking systems** — these require explicit approval and proper integration before adding
+
+---
+
+## Adding Dependencies
+
+When you add a package to `package.json` you **must** also update the lock file before pushing. Forgetting this breaks CI immediately — `npm ci` refuses to run when `package.json` and `package-lock.json` are out of sync.
+
+**Frontend (`nevo_frontend/`):**
+```bash
+npm install <package>         # updates both package.json and package-lock.json
+npm run build                 # verify it still builds
+```
+
+**Backend (`nevo_server/`):**
+```bash
+npm install <package>         # updates both package.json and package-lock.json
+npm run build                 # verify it still builds
+```
+
+Always commit `package.json` and `package-lock.json` together in the same commit. Never edit `package.json` manually and push without regenerating the lock file.
+
+### NestJS version compatibility
+
+The server uses **NestJS 11**. Some `@nestjs/*` companion packages have not yet released a v11-compatible version. Always check before installing:
+
+| Package | Minimum version for NestJS 11 |
+|---|---|
+| `@nestjs/schedule` | `^5.0.0` (not `^4.x`) |
+| `@nestjs/typeorm` | `^11.0.0` |
+| `@nestjs/jwt` | `^11.0.0` |
+
+If you install a companion package at the wrong major version, `npm install` will warn about a peer dependency conflict. Treat that warning as a hard error — fix the version before pushing.
