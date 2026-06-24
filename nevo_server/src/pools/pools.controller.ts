@@ -6,8 +6,11 @@ import {
   Param,
   Patch,
   Post,
+  Request,
+  UseGuards,
 } from '@nestjs/common';
 import { PoolsService } from './pools.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 
 export interface CreatePoolDto {
   contractPoolId: string;
@@ -25,6 +28,10 @@ export interface UpdatePoolDto {
 }
 
 export interface WithdrawDto {
+  requesterWallet: string;
+}
+
+export interface ClosePoolDto {
   requesterWallet: string;
 }
 
@@ -51,5 +58,18 @@ export class PoolsController {
     if (pool.creatorWallet !== dto.requesterWallet)
       throw new ForbiddenException('Only the pool creator may withdraw');
     return this.poolsService.buildWithdrawTx(pool);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/close')
+  async close(
+    @Param('id') id: string,
+    @Request() req: { user: { publicKey: string } },
+  ) {
+    const pool = await this.poolsService.findByContractId(id);
+    if (!pool) throw new NotFoundException('Pool not found');
+    if (pool.creatorWallet !== req.user.publicKey)
+      throw new ForbiddenException('Only the pool creator may close this pool');
+    return this.poolsService.buildClosePoolTx(pool);
   }
 }

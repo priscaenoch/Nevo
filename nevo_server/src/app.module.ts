@@ -7,6 +7,7 @@ import { SyncModule } from './sync/sync.module.js';
 import { Pool } from './pools/pool.entity.js';
 import { PoolsModule } from './pools/pools.module.js';
 import { User } from './users/user.entity.js';
+import { AuthModule } from './auth/auth.module.js';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { User } from './users/user.entity.js';
     ScheduleModule.forRoot(),
     SyncModule,
     PoolsModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
