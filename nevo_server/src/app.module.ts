@@ -2,9 +2,7 @@ import { Module } from '@nestjs/common';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { Pool } from './pools/pool.entity';
-import { PoolsModule } from './pools/pools.module';
-import { SyncModule } from './sync/sync.module';
+import { User } from './users/user.entity';
 
 @Module({
   imports: [
@@ -15,12 +13,10 @@ import { SyncModule } from './sync/sync.module';
       username: process.env.DB_USER ?? 'postgres',
       password: process.env.DB_PASSWORD ?? 'postgres',
       database: process.env.DB_NAME ?? 'nevo',
-      entities: [Pool],
+      entities: [User],
       migrations: ['dist/migrations/*.js'],
       synchronize: false,
     }),
-    PoolsModule,
-    SyncModule,
   ],
   controllers: [AppController],
   providers: [AppService],
