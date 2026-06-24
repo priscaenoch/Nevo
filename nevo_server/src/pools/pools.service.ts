@@ -1,0 +1,72 @@
+import { Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Pool } from './pool.entity';
+import type { CreatePoolDto, UpdatePoolDto } from './pools.controller';
+
+export interface ChainPoolData {
+  contractPoolId: string;
+  creatorWallet: string;
+  goal: string;
+}
+
+@Injectable()
+export class PoolsService {
+  constructor(
+    @InjectRepository(Pool)
+    private readonly poolRepo: Repository<Pool>,
+  ) {}
+
+  async upsertFromChain(data: ChainPoolData): Promise<Pool> {
+    const existing = await this.poolRepo.findOne({
+      where: { contractPoolId: data.contractPoolId },
+    });
+
+    if (existing) {
+      existing.creatorWallet = data.creatorWallet;
+      existing.goal = data.goal;
+      return this.poolRepo.save(existing);
+    }
+
+    return this.poolRepo.save(
+      this.poolRepo.create({
+        contractPoolId: data.contractPoolId,
+        creatorWallet: data.creatorWallet,
+        goal: data.goal,
+      }),
+    );
+  }
+
+  async create(dto: CreatePoolDto): Promise<Pool> {
+    return this.poolRepo.save(
+      this.poolRepo.create({
+        contractPoolId: dto.contractPoolId,
+        creatorWallet: dto.creatorWallet,
+        goal: dto.goal,
+        title: dto.title ?? null,
+        description: dto.description ?? null,
+        imageUrl: dto.imageUrl ?? null,
+      }),
+    );
+  }
+
+  async updateMeta(
+    contractPoolId: string,
+    dto: UpdatePoolDto,
+  ): Promise<Pool | null> {
+    const pool = await this.poolRepo.findOne({ where: { contractPoolId } });
+    if (!pool) return null;
+    if (dto.description !== undefined) pool.description = dto.description;
+    if (dto.imageUrl !== undefined) pool.imageUrl = dto.imageUrl;
+    return this.poolRepo.save(pool);
+  }
+
+  async findByContractId(contractPoolId: string): Promise<Pool | null> {
+    return this.poolRepo.findOne({ where: { contractPoolId } });
+  }
+
+  buildWithdrawTx(pool: Pool): { unsignedXdr: string; poolId: string } {
+    // TODO: replace with real Stellar transaction build calling contract.withdraw (#657)
+    return { unsignedXdr: 'placeholder_xdr', poolId: pool.contractPoolId };
+  }
+}
