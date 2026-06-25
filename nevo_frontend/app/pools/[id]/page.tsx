@@ -3,50 +3,27 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
+import { signTransaction } from '@stellar/freighter-api';
 import { DonateModal } from '@/components/DonateModal';
 import { EmptyState } from '@/components/EmptyState';
 import { WalletAddress } from '@/components/WalletAddress';
 import { CopyButton } from '@/components/CopyButton';
+import { toast } from '@/components/Toast';
 import { usePoolsStore } from '@/src/store/poolsStore';
 import type { Pool } from '@/src/store/poolsStore';
 import { useWalletStore } from '@/src/store/walletStore';
+import {
+  fetchPoolDonations,
+  withdrawPool,
+  submitSignedXdr,
+  type Donation,
+} from '@/lib/api-client';
 
-// Removed MOCK_POOLS
+// Testnet XLM native contract address (same as api-client)
+const TESTNET_XLM_CONTRACT =
+  'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
 
-interface Contributor {
-  address: string;
-  amount: number;
-  donatedAt: string;
-}
-
-const MOCK_CONTRIBUTORS: Record<string, Contributor[]> = {
-  '1': [
-    {
-      address: 'GXYZ1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890AB',
-      amount: 500,
-      donatedAt: '2025-03-05',
-    },
-    {
-      address: 'GABC9876543210ZYXWV9876543210ZYXWV9876543210ZYXWV9876543210ZY',
-      amount: 1200,
-      donatedAt: '2025-03-12',
-    },
-  ],
-  '2': [
-    {
-      address: 'GXYZ1234567890ABCDE1234567890ABCDE1234567890ABCDE1234567890AB',
-      amount: 750,
-      donatedAt: '2025-01-20',
-    },
-  ],
-  '3': [
-    {
-      address: 'GDEF5555555555GHIJK5555555555GHIJK5555555555GHIJK5555555555GH',
-      amount: 1000,
-      donatedAt: '2024-11-15',
-    },
-  ],
-};
+type WithdrawStep = 'idle' | 'creating' | 'signing' | 'submitting';
 
 interface TimelineEvent {
   id: string;
@@ -70,8 +47,9 @@ export default function PoolDetailPage() {
     poolLoading: loading,
     fetchPool,
   } = usePoolsStore();
-  const [contributors, setContributors] = useState<Contributor[]>([]);
+  const [contributors, setContributors] = useState<Donation[]>([]);
   const [donateOpen, setDonateOpen] = useState(false);
+  const [withdrawStep, setWithdrawStep] = useState<WithdrawStep>('idle');
 
   useEffect(() => {
     initialize();
@@ -83,8 +61,14 @@ export default function PoolDetailPage() {
       const p = await fetchPool(Number(id));
       if (!p) {
         router.replace('/pools');
-      } else {
-        setContributors(MOCK_CONTRIBUTORS[id] ?? []);
+        return;
+      }
+      try {
+        const donations = await fetchPoolDonations(id);
+        const sorted = [...donations].sort((a, b) => b.amount - a.amount);
+        setContributors(sorted.slice(0, 5));
+      } catch {
+        setContributors([]);
       }
     };
     loadPool();
@@ -114,6 +98,36 @@ export default function PoolDetailPage() {
   const isCompleted = pool.status === 'Completed';
   const isActive = pool.status === 'Active';
   const lastUpdated = MOCK_LAST_UPDATED[pool.id] ?? pool.createdAt;
+
+  async function handleWithdraw() {
+    if (!pool || !isOwner || !isCompleted) return;
+    setWithdrawStep('creating');
+    try {
+      const { xdr } = await withdrawPool(pool.id, TESTNET_XLM_CONTRACT);
+      setWithdrawStep('signing');
+      const signedResult = await signTransaction(xdr, {
+        networkPassphrase:
+          process.env.NEXT_PUBLIC_NETWORK_PASSPHRASE ||
+          'Test SDF Network ; September 2015',
+      });
+      if (signedResult.error) throw new Error(signedResult.error);
+      setWithdrawStep('submitting');
+      await submitSignedXdr(signedResult.signedTxXdr);
+      toast('Funds withdrawn successfully!', 'success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Withdrawal failed.';
+      toast(msg, 'error');
+    } finally {
+      setWithdrawStep('idle');
+    }
+  }
+
+  function withdrawLabel() {
+    if (withdrawStep === 'creating') return 'Creating...';
+    if (withdrawStep === 'signing') return 'Waiting for signature...';
+    if (withdrawStep === 'submitting') return 'Submitting...';
+    return 'Withdraw Funds';
+  }
 
   return (
     <main className="mx-auto max-w-5xl px-4 py-8 sm:px-6 sm:py-10">
@@ -381,6 +395,20 @@ export default function PoolDetailPage() {
             >
               {isCompleted ? 'Pool Closed' : 'Donate Now'}
             </button>
+
+            {isOwner && isCompleted && (
+              <button
+                type="button"
+                onClick={handleWithdraw}
+                disabled={withdrawStep !== 'idle'}
+                className="mt-3 w-full rounded-full border border-brand-600 px-6 py-3 text-sm font-semibold text-brand-600 hover:bg-brand-50 transition-colors disabled:cursor-not-allowed disabled:opacity-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                {withdrawStep !== 'idle' && (
+                  <span className="mr-2 inline-block size-4 animate-spin rounded-full border-2 border-brand-600 border-t-transparent align-middle" />
+                )}
+                {withdrawLabel()}
+              </button>
+            )}
 
             <div className="mt-4">
               <CopyButton

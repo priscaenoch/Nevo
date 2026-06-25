@@ -478,3 +478,30 @@ export async function submitSignedXdr(
 ): Promise<{ txHash: string }> {
   return apiClient.post<{ txHash: string }>('/transactions/submit', { xdr });
 }
+
+export interface Donation {
+  address: string;
+  amount: number;
+  donatedAt: string;
+}
+
+export async function fetchPoolDonations(poolId: string): Promise<Donation[]> {
+  return apiClient.get<Donation[]>(`/pools/${poolId}/donations`);
+}
+
+export interface WithdrawResponse {
+  xdr: string;
+}
+
+// Testnet XLM native contract address (hardcoded as per issue #717)
+const TESTNET_XLM_CONTRACT =
+  'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+
+export async function withdrawPool(
+  poolId: string,
+  tokenAddress: string = TESTNET_XLM_CONTRACT
+): Promise<WithdrawResponse> {
+  return apiClient.post<WithdrawResponse>(`/pools/${poolId}/withdraw`, {
+    tokenAddress,
+  });
+}
