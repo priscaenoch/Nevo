@@ -1,7 +1,17 @@
 import { Test, TestingModule } from '@nestjs/testing';
+import { ConfigService } from '@nestjs/config';
 import { TransactionBuilder, Networks, Keypair } from '@stellar/stellar-sdk';
 import { ContractService } from './contract.service.js';
 import { StellarError } from './stellar.error.js';
+
+const mockConfigService = {
+  get: (key: string) => {
+    if (key === 'STELLAR_RPC_URL') return 'https://soroban-testnet.stellar.org';
+    if (key === 'CONTRACT_ID')
+      return 'CAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD2KM';
+    return undefined;
+  },
+};
 
 const SOURCE = Keypair.random().publicKey();
 const NETWORK = Networks.TESTNET;
@@ -11,7 +21,10 @@ describe('ContractService', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
-      providers: [ContractService],
+      providers: [
+        ContractService,
+        { provide: ConfigService, useValue: mockConfigService },
+      ],
     }).compile();
     service = module.get(ContractService);
   });
