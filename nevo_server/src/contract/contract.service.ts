@@ -173,11 +173,11 @@ export class ContractService {
   }
 
   async getPoolOnChain(poolId: number): Promise<{
-    sponsor: string;
+    id: number;
+    creator: string;
     goal: bigint;
     collected: bigint;
-    isClosed: boolean;
-    applicationDeadline: bigint;
+    closed: boolean;
   } | null> {
     try {
       const keypair = SOURCE_SECRET
@@ -204,13 +204,13 @@ export class ContractService {
       if (!retVal) return null;
 
       const native = scValToNative(retVal);
-      if (Array.isArray(native) && native.length >= 6) {
+      if (Array.isArray(native) && native.length >= 5) {
         return {
-          sponsor: String(native[1]),
+          id: poolId,
+          creator: String(native[1]),
           goal: BigInt(native[2]),
           collected: BigInt(native[3]),
-          isClosed: Boolean(native[4]),
-          applicationDeadline: BigInt(native[5]),
+          closed: Boolean(native[4]),
         };
       }
       return null;
