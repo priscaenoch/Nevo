@@ -40,14 +40,16 @@ export class ContractService {
     this.logger.log(`Stellar RPC connected: ${rpcUrl} (${network})`);
   }
 
-  buildCreatePoolTransaction(
-    sourcePublicKey: string,
-    goal: string,
-    title: string,
-    description: string,
-  ): string {
+  buildCreatePoolTransaction(params: {
+    creator: string;
+    goal: string;
+    token: string;
+    title: string;
+    description: string;
+  }): string {
     try {
-      const source = new Account(sourcePublicKey, '0');
+      const { creator, goal, token, title, description } = params;
+      const source = new Account(creator, '0');
       const tx = new TransactionBuilder(source, {
         fee: BASE_FEE,
         networkPassphrase: NETWORK_PASSPHRASE,
@@ -55,8 +57,9 @@ export class ContractService {
         .addOperation(
           this.contract.call(
             'create_pool',
-            nativeToScVal(sourcePublicKey, { type: 'address' }),
+            nativeToScVal(creator, { type: 'address' }),
             nativeToScVal(BigInt(goal), { type: 'i128' }),
+            nativeToScVal(token, { type: 'address' }),
             nativeToScVal(title, { type: 'string' }),
             nativeToScVal(description, { type: 'string' }),
           ),

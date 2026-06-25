@@ -31,12 +31,14 @@ describe('ContractService', () => {
 
   describe('buildCreatePoolTransaction', () => {
     it('returns a valid base64 XDR string', () => {
-      const xdr = service.buildCreatePoolTransaction(
-        SOURCE,
-        '1000',
-        'My Pool',
-        'desc',
-      );
+      const token = Keypair.random().publicKey();
+      const xdr = service.buildCreatePoolTransaction({
+        creator: SOURCE,
+        goal: '1000',
+        token,
+        title: 'My Pool',
+        description: 'desc',
+      });
       expect(typeof xdr).toBe('string');
       expect(xdr.length).toBeGreaterThan(0);
       // Must be parseable back into a transaction
