@@ -3,7 +3,6 @@ import { Donation } from './donations/donation.entity';
 import { Pool } from './pools/pool.entity';
 import { User } from './users/user.entity';
 import { Nonce } from './auth/nonce.entity';
-import { Pool } from './pools/pool.entity';
 
 export const AppDataSource = new DataSource({
   type: 'postgres',

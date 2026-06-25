@@ -7,7 +7,8 @@ import { JwtService } from '@nestjs/jwt';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/user.entity';
 import { randomBytes } from 'crypto';
-import { StrKey } from '@stellar/stellar-sdk';
+import { Keypair, StrKey } from '@stellar/stellar-sdk';
+import { NonceService } from './nonce.service';
 
 export interface VerifyDto {
   publicKey: string;
@@ -39,6 +40,7 @@ export class AuthService {
   constructor(
     private readonly jwtService: JwtService,
     private readonly usersService: UsersService,
+    private readonly nonceService: NonceService,
   ) {
     setInterval(() => this.cleanupExpiredChallenges(), CHALLENGE_TTL_MS);
   }
@@ -90,7 +92,7 @@ export class AuthService {
   ): boolean {
     try {
       // Verify the Stellar Ed25519 signature
-      const keypair = StellarSdk.Keypair.fromPublicKey(publicKey);
+      const keypair = Keypair.fromPublicKey(publicKey);
       return keypair.verify(Buffer.from(message), Buffer.from(signature, 'hex'));
     } catch {
       return false;
