@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
-import type { StringValue } from 'ms';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { UsersModule } from '../users/users.module';
 import { AuthService } from './auth.service';
@@ -10,12 +11,18 @@ import { Nonce } from './nonce.entity';
 
 @Module({
   imports: [
+    ConfigModule,
+    PassportModule,
     TypeOrmModule.forFeature([Nonce]),
-    JwtModule.register({
-      secret: process.env.JWT_SECRET ?? 'dev-secret',
-      signOptions: {
-        expiresIn: (process.env.JWT_EXPIRY ?? '7d') as StringValue,
-      },
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        secret: config.get<string>('JWT_SECRET', 'dev-secret'),
+        signOptions: {
+          expiresIn: config.get<string>('JWT_EXPIRY', '7d') as unknown as any,
+        },
+      }),
     }),
     UsersModule,
   ],
