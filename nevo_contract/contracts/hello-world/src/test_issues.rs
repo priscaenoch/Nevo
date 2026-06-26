@@ -4,7 +4,7 @@ use super::*;
 use soroban_sdk::{
     testutils::{Address as _, Ledger, MockAuth, MockAuthInvoke},
     token::StellarAssetClient,
-    Address, Env, IntoVal, String, Vec, Symbol,
+    Address, Env, IntoVal, String, Symbol, Vec,
 };
 
 fn create_token(env: &Env, amount: i128, recipient: &Address) -> Address {
@@ -35,6 +35,7 @@ fn test_emergency_withdrawal_at_grace_period_boundary() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     client.request_emergency_withdraw(&admin, &pool_id, &token, &100_000_000i128);
@@ -65,6 +66,7 @@ fn test_emergency_withdrawal_before_grace_period_fails() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     client.request_emergency_withdraw(&admin, &pool_id, &token, &100_000_000i128);
@@ -94,6 +96,7 @@ fn test_grace_period_calculation_with_different_timestamps() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set initial timestamp to a non-zero value
@@ -126,6 +129,7 @@ fn test_emergency_withdrawal_token_transfer() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     client.request_emergency_withdraw(&admin, &pool_id, &token, &withdrawal_amount);
@@ -141,7 +145,10 @@ fn test_emergency_withdrawal_token_transfer() {
     let has_request = env.as_contract(&contract_id, || {
         env.storage().persistent().has(&withdrawal_key)
     });
-    assert!(!has_request, "Withdrawal request should be removed after execution");
+    assert!(
+        !has_request,
+        "Withdrawal request should be removed after execution"
+    );
 }
 
 // ============= ISSUE #461: POOL CONTRIBUTION EDGE CASE TESTS FOR STATE VALIDATION =============
@@ -163,6 +170,7 @@ fn test_contribute_to_active_pool_succeeds() {
         &String::from_str(&env, "Active Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Pool is in Active state by default - should succeed
@@ -190,9 +198,11 @@ fn test_contribute_to_closed_pool_fails() {
         &String::from_str(&env, "Closed Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
-    // Close the pool
+    // Transition to Disbursed so close_pool is allowed, then close the pool
+    client.set_pool_state(&pool_id, &PoolState::Disbursed);
     client.close_pool(&pool_id);
 
     // Should fail with "Pool is closed"
@@ -223,6 +233,7 @@ fn test_valid_admin_requests_emergency_withdrawal() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Valid admin should successfully request emergency withdrawal
@@ -256,6 +267,7 @@ fn test_non_admin_request_emergency_withdrawal_fails() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Non-admin should fail with Auth Error
@@ -281,6 +293,7 @@ fn test_duplicate_emergency_withdrawal_request_fails() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // First request should succeed
@@ -309,6 +322,7 @@ fn test_execute_emergency_withdraw_before_grace_period_fails() {
         &String::from_str(&env, "Emergency Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     client.request_emergency_withdraw(&admin, &pool_id, &token, &100_000_000i128);
@@ -337,6 +351,7 @@ fn test_zero_amount_contribution_fails() {
         &String::from_str(&env, "Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Zero amount should fail with InvalidAmount
@@ -361,6 +376,7 @@ fn test_negative_amount_contribution_fails() {
         &String::from_str(&env, "Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Negative amount should fail with InvalidAmount
@@ -385,6 +401,7 @@ fn test_maximum_i128_amount_contribution_succeeds() {
         &String::from_str(&env, "Max Amount Pool"),
         &String::from_str(&env, "Test"),
         &(i128::MAX as u128),
+        &100_000u64,
     );
 
     // Maximum i128 amount should succeed if balance allows
@@ -412,6 +429,7 @@ fn test_contribution_exceeding_balance_fails() {
         &String::from_str(&env, "Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Try to contribute more than balance - should fail with token transfer error
@@ -435,6 +453,7 @@ fn test_close_disbursed_pool_succeeds() {
         &String::from_str(&env, "Disbursed Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Disbursed
@@ -463,6 +482,7 @@ fn test_close_cancelled_pool_succeeds() {
         &String::from_str(&env, "Cancelled Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Cancelled
@@ -492,6 +512,7 @@ fn test_close_active_pool_fails() {
         &String::from_str(&env, "Active Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Pool is in Active state by default - should fail
@@ -514,6 +535,7 @@ fn test_close_paused_pool_fails() {
         &String::from_str(&env, "Paused Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Paused
@@ -539,6 +561,7 @@ fn test_close_completed_pool_fails() {
         &String::from_str(&env, "Completed Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Completed
@@ -564,6 +587,7 @@ fn test_close_already_closed_pool_fails() {
         &String::from_str(&env, "Closed Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Closed
@@ -588,6 +612,7 @@ fn test_closed_state_persists() {
         &String::from_str(&env, "Test Pool"),
         &String::from_str(&env, "Test"),
         &1_000_000_000u128,
+        &100_000u64,
     );
 
     // Set pool state to Disbursed
