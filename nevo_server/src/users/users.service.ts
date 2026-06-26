@@ -15,7 +15,7 @@ export class UsersService {
     if (existing) return existing;
 
     return this.userRepo.save(
-      this.userRepo.create({ publicKey, username: null }),
+      this.userRepo.create({ publicKey, displayName: null }),
     );
   }
 }
