@@ -497,6 +497,8 @@ export async function fetchMyProfile(): Promise<UserProfile> {
       poolUpdates: false,
     },
   };
+}
+
 export async function submitSignedXdr(
   xdr: string
 ): Promise<{ txHash: string }> {
