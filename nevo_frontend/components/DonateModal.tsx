@@ -53,6 +53,7 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
   const [amount, setAmount] = useState('');
   const [step, setStep] = useState<Step>('form');
   const [errorMsg, setErrorMsg] = useState('');
+  const [lastTxHash, setLastTxHash] = useState('');
   const [txHash, setTxHash] = useState('');
   const backdropRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -154,6 +155,20 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
       setErrorMsg('Transaction rejected by the network. Please try again.');
       setStep('error');
     }
+
+    const donation = {
+      id: `mock-${Date.now()}`,
+      poolId: pool.id,
+      poolName: pool.title,
+      amount,
+      asset,
+      txHash: `mock-tx-${Math.random().toString(36).slice(2)}`,
+      timestamp: new Date().toISOString(),
+      status: 'confirmed' as const,
+    };
+    addDonation(donation);
+    setLastTxHash(donation.txHash);
+    setStep('success');
   }
 
   return (
@@ -358,6 +373,25 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
                   {txHash.slice(0, 10)}…{txHash.slice(-6)}
                 </a>
               )}
+            </div>
+            <div className="mt-2 flex w-full gap-3">
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex-1 rounded-xl border border-[var(--color-border)] px-4 py-2.5 text-sm font-medium hover:bg-[var(--color-surface-raised)] transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                Done
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  onClose();
+                  window.location.href = `/donations/receipt?txHash=${encodeURIComponent(lastTxHash)}`;
+                }}
+                className="flex-1 rounded-xl bg-brand-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-brand-700 transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-600"
+              >
+                View Receipt
+              </button>
             </div>
             <button
               type="button"
