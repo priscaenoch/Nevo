@@ -9,13 +9,11 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PoolsService } from './pools.service';
-import { DonationsService } from '../donations/donations.service';
 import { ContractService } from '../contract/contract.service';
 import { StellarAuthGuard } from '../auth/stellar-auth.guard';
 
@@ -53,7 +51,6 @@ interface JwtPayload {
 export class PoolsController {
   constructor(
     private readonly poolsService: PoolsService,
-    private readonly donationsService: DonationsService,
     private readonly contractService: ContractService,
   ) {}
 
@@ -83,19 +80,6 @@ export class PoolsController {
     if (pool.creatorWallet !== dto.requesterWallet)
       throw new ForbiddenException('Only the pool creator may withdraw');
     return this.poolsService.buildWithdrawTx(pool);
-  }
-
-  @Get(':id/donations')
-  getDonations(
-    @Param('id', ParseIntPipe) id: number,
-    @Query('page') page = '1',
-    @Query('limit') limit = '20',
-  ) {
-    return this.donationsService.findByPool(
-      id,
-      Math.max(1, parseInt(page, 10) || 1),
-      Math.min(100, Math.max(1, parseInt(limit, 10) || 20)),
-    );
   }
 
   @UseGuards(StellarAuthGuard)

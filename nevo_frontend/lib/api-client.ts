@@ -517,25 +517,12 @@ export function createPool(
   payload: CreatePoolPayload
 ): Promise<CreatePoolResponse> {
   return apiClient.post<CreatePoolResponse>('/pools', payload);
+}
+
 export async function submitSignedXdr(
   xdr: string
 ): Promise<{ txHash: string }> {
   return apiClient.post<{ txHash: string }>('/transactions/submit', { xdr });
-}
-
-export interface ApiDonation {
-  id: string;
-  type: 'donation' | 'pool_creation' | 'withdrawal';
-  amount: string;
-  asset: string;
-  recipient: string;
-  date: string;
-  status: 'completed' | 'pending' | 'failed';
-  txHash: string;
-}
-
-export async function fetchMyDonations(): Promise<ApiDonation[]> {
-  return apiClient.get<ApiDonation[]>('/donations/me');
 }
 
 export interface ApiPool {
@@ -560,22 +547,6 @@ export async function donate(
   tokenAddress: string
 ): Promise<void> {
   return apiClient.post('/donations', { poolId, amount, tokenAddress });
-}
-
-export async function createPool(data: {
-  title: string;
-  description: string;
-  category: string;
-  goal: string;
-  imageUrl?: string;
-}): Promise<{ poolId: number; unsignedXdr: string }> {
-  return apiClient.post<{ poolId: number; unsignedXdr: string }>(
-    '/pools',
-    data,
-    {
-      requireAuth: true,
-    }
-  );
 }
 
 export async function closePool(
