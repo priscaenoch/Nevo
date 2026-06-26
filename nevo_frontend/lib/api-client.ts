@@ -67,7 +67,7 @@ export class ApiClient {
 
   constructor(
     baseURL: string = '',
-    defaultTimeout: number = 10000,
+    defaultTimeout: number = 15000,
     rateLimit: Partial<RateLimitOptions> = DEFAULT_RATE_LIMIT_OPTIONS
   ) {
     this.baseURL =
@@ -395,7 +395,9 @@ export class ApiClient {
             'name' in error &&
             error.name === 'AbortError'
           ) {
-            finalError = new Error(`Request timed out after ${timeout}ms`);
+            finalError = new Error(
+              `Request timed out. Please check your connection.`
+            );
           }
 
           // Don't retry on client errors (4xx) except 429 Too Many Requests
@@ -473,34 +475,119 @@ apiClient.addRequestInterceptor((config) => {
   return config;
 });
 
-export interface UserProfile {
-  email: string;
-  displayName: string;
-  notifications: {
-    donations: boolean;
-    withdrawals: boolean;
-    poolUpdates: boolean;
-  };
-  avatarSrc?: string;
+export interface ApiDonation {
+  id: string;
+  poolId: string;
+  poolName: string;
+  amount: string;
+  asset: 'XLM' | 'USDC';
+  txHash: string;
+  timestamp: string;
+  status: 'pending' | 'confirmed' | 'failed';
 }
 
-// TODO: replace with real implementation once backend profile endpoint is implemented
-export async function fetchMyProfile(): Promise<UserProfile> {
-  // Simulate API delay
-  await new Promise((resolve) => setTimeout(resolve, 800));
-  return {
-    email: 'user@example.com',
-    displayName: 'Crypto Philanthropist',
-    notifications: {
-      donations: true,
-      withdrawals: true,
-      poolUpdates: false,
-    },
-  };
+export interface ApiProfile {
+  publicKey: string;
+  displayName: string | null;
+  createdAt: string;
 }
 
+export function fetchMyDonations(): Promise<ApiDonation[]> {
+  return apiClient.get<ApiDonation[]>('/users/me/donations');
+}
+
+export function fetchMyProfile(): Promise<ApiProfile> {
+  return apiClient.get<ApiProfile>('/users/me');
+}
+
+export interface CreatePoolPayload {
+  title: string;
+  description: string;
+  category: string;
+  goalAmount: string;
+  duration: number;
+  imageUrl: string;
+  tags: string;
+}
+
+export interface CreatePoolResponse {
+  id: string;
+  unsignedXdr: string;
+}
+
+export function createPool(
+  payload: CreatePoolPayload
+): Promise<CreatePoolResponse> {
+  return apiClient.post<CreatePoolResponse>('/pools', payload);
 export async function submitSignedXdr(
   xdr: string
 ): Promise<{ txHash: string }> {
   return apiClient.post<{ txHash: string }>('/transactions/submit', { xdr });
+}
+
+export interface ApiDonation {
+  id: string;
+  type: 'donation' | 'pool_creation' | 'withdrawal';
+  amount: string;
+  asset: string;
+  recipient: string;
+  date: string;
+  status: 'completed' | 'pending' | 'failed';
+  txHash: string;
+}
+
+export async function fetchMyDonations(): Promise<ApiDonation[]> {
+  return apiClient.get<ApiDonation[]>('/donations/me');
+}
+
+export interface ApiPool {
+  id: string;
+  contractPoolId: string;
+  title: string;
+  description: string;
+  goal: string;
+  raised: string;
+  status: string;
+}
+
+export async function fetchCreatorPools(publicKey: string): Promise<ApiPool[]> {
+  return apiClient.get<ApiPool[]>(
+    `/pools?creator=${encodeURIComponent(publicKey)}`
+  );
+}
+
+export async function donate(
+  poolId: number,
+  amount: string,
+  tokenAddress: string
+): Promise<void> {
+  return apiClient.post('/donations', { poolId, amount, tokenAddress });
+}
+
+export async function createPool(data: {
+  title: string;
+  description: string;
+  category: string;
+  goal: string;
+  imageUrl?: string;
+}): Promise<{ poolId: number; unsignedXdr: string }> {
+  return apiClient.post<{ poolId: number; unsignedXdr: string }>(
+    '/pools',
+    data,
+    {
+      requireAuth: true,
+    }
+  );
+}
+
+export async function closePool(
+  poolId: string | number
+): Promise<{ unsignedXdr: string }> {
+  return apiClient.post<{ unsignedXdr: string }>(
+    `/pools/${poolId}/close`,
+    undefined,
+    {
+      requireAuth: true,
+    }
+  );
 }

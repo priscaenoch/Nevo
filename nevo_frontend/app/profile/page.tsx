@@ -1,13 +1,12 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useWalletStore } from '@/src/store/walletStore';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { WalletAddress } from '@/components/WalletAddress';
-import { fetchMyProfile } from '@/lib/api-client';
+import { fetchMyProfile, type ApiProfile } from '@/lib/api-client';
 
-// Mock user preferences store
 interface UserPreferences {
   email: string;
   displayName: string;
@@ -19,9 +18,9 @@ interface UserPreferences {
   avatarSrc?: string;
 }
 
-const MOCK_PREFERENCES: UserPreferences = {
-  email: 'user@example.com',
-  displayName: 'Crypto Philanthropist',
+const DEFAULT_PREFERENCES: UserPreferences = {
+  email: '',
+  displayName: '',
   notifications: {
     donations: true,
     withdrawals: true,
@@ -32,11 +31,27 @@ const MOCK_PREFERENCES: UserPreferences = {
 export default function ProfilePage() {
   const { publicKey } = useWalletStore();
   const [preferences, setPreferences] =
-    useState<UserPreferences>(MOCK_PREFERENCES);
-  const [isLoading, setIsLoading] = useState(true);
+    useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [isEditingAvatar, setIsEditingAvatar] = useState(false);
-  const [avatarFile, setAvatarFile] = useState<File | null>(null);
+  const [profile, setProfile] = useState<ApiProfile | null>(null);
+
+  useEffect(() => {
+    fetchMyProfile()
+      .then((data) => {
+        setProfile(data);
+        setPreferences((p) => ({
+          ...p,
+          displayName:
+            data.displayName ??
+            (data.publicKey
+              ? `${data.publicKey.slice(0, 6)}…${data.publicKey.slice(-4)}`
+              : ''),
+        }));
+      })
+      .catch(() => {
+        // API unavailable — keep defaults
+      });
+  }, []);
 
   useEffect(() => {
     let active = true;
@@ -65,14 +80,12 @@ export default function ProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      setAvatarFile(file);
       const reader = new FileReader();
       reader.onload = (e) => {
         setPreferences({
           ...preferences,
           avatarSrc: e.target?.result as string,
         });
-        setIsEditingAvatar(false);
       };
       reader.readAsDataURL(file);
     }
@@ -151,13 +164,12 @@ export default function ProfilePage() {
               </div>
 
               {/* Name */}
-              {isLoading ? (
-                <div className="h-6 w-32 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              ) : (
-                <h2 className="text-lg font-semibold">
-                  {preferences.displayName}
-                </h2>
-              )}
+              <h2 className="text-lg font-semibold">
+                {profile?.displayName ??
+                  (publicKey
+                    ? `${publicKey.slice(0, 6)}…${publicKey.slice(-4)}`
+                    : '—')}
+              </h2>
               <div className="mt-2 w-full">
                 {isLoading ? (
                   <div className="h-5 w-40 bg-gray-200 dark:bg-gray-700 rounded animate-pulse mx-auto" />
@@ -165,6 +177,15 @@ export default function ProfilePage() {
                   <WalletAddress address={publicKey || ''} />
                 )}
               </div>
+              {profile?.createdAt && (
+                <p className="mt-1 text-xs text-[var(--color-text-muted)]">
+                  Member since{' '}
+                  {new Date(profile.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                  })}
+                </p>
+              )}
 
               <div className="mt-6 w-full">
                 {isLoading ? (
@@ -327,11 +348,36 @@ export default function ProfilePage() {
               </a>
             </div>
             <div className="space-y-3">
-              {isLoading
-                ? [1, 2, 3].map((i) => (
-                    <div
-                      key={i}
-                      className="flex items-center gap-4 p-3 rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] animate-pulse"
+              {(
+                [] as {
+                  id: string;
+                  type: string;
+                  amount: string;
+                  asset: string;
+                  recipient: string;
+                  date: string;
+                }[]
+              ).map((tx) => (
+                <div
+                  key={tx.id}
+                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-[var(--color-surface-raised)] transition-colors"
+                >
+                  <div
+                    className={`flex size-9 items-center justify-center rounded-full ${
+                      tx.type === 'donation'
+                        ? 'bg-brand-100 text-brand-600'
+                        : tx.type === 'pool_creation'
+                          ? 'bg-warning-light text-warning-dark'
+                          : 'bg-success-light text-success-dark'
+                    }`}
+                  >
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      strokeWidth={1.5}
+                      stroke="currentColor"
+                      className="size-4"
                     >
                       <div className="size-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
                       <div className="flex-1 space-y-2">
