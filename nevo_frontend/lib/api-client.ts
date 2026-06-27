@@ -8,7 +8,7 @@ import {
   parseRetryAfterHeader,
   resolveRateLimitOptions,
 } from './rate-limit';
-import { toast } from '@/components/Toast';
+import { getStoredAccessToken } from './jwt-storage';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -78,6 +78,29 @@ export class ApiClient {
     this.defaultTimeout = defaultTimeout;
     this.defaultRateLimit = resolveRateLimitOptions(rateLimit);
     this.rateLimiter = new ClientRateLimiter();
+    this.addRequestInterceptor((config) =>
+      this.attachAuthorizationHeader(config)
+    );
+  }
+
+  private attachAuthorizationHeader(
+    config: PreparedRequestConfig
+  ): PreparedRequestConfig {
+    if (config.requireAuth === false) {
+      return config;
+    }
+
+    const headers = new Headers(config.headers);
+    const accessToken = getStoredAccessToken();
+
+    if (accessToken) {
+      headers.set('Authorization', `Bearer ${accessToken}`);
+    }
+
+    return {
+      ...config,
+      headers,
+    };
   }
 
   private startRequest() {
@@ -458,32 +481,6 @@ export {
   isRateLimitError,
 } from './rate-limit';
 
-// Add default auth interceptor for wallet signature and JWT
-apiClient.addRequestInterceptor((config) => {
-  if (config.requireAuth !== false) {
-    const headers = new Headers(config.headers);
-
-    // Get access token from wallet store (via localStorage since we can't import zustand here)
-    if (typeof window !== 'undefined') {
-      const walletStoreData = localStorage.getItem('nevo-wallet');
-      if (walletStoreData) {
-        try {
-          const parsed = JSON.parse(walletStoreData);
-          const state = parsed.state || parsed;
-          if (state.accessToken) {
-            headers.set('Authorization', `Bearer ${state.accessToken}`);
-          }
-        } catch {
-          // Ignore parsing errors
-        }
-      }
-    }
-
-    config.headers = headers;
-  }
-  return config;
-});
-
 export interface ApiDonation {
   id: string;
   poolId: string;
@@ -541,30 +538,6 @@ export async function submitSignedXdr(
   xdr: string
 ): Promise<{ txHash: string }> {
   return apiClient.post<{ txHash: string }>('/transactions/submit', { xdr });
-}
-
-export interface ApiPool {
-  id: string;
-  contractPoolId: string;
-  title: string;
-  description: string;
-  goal: string;
-  raised: string;
-  status: string;
-}
-
-export async function fetchCreatorPools(publicKey: string): Promise<ApiPool[]> {
-  return apiClient.get<ApiPool[]>(
-    `/pools?creator=${encodeURIComponent(publicKey)}`
-  );
-}
-
-export async function donate(
-  poolId: number,
-  amount: string,
-  tokenAddress: string
-): Promise<void> {
-  return apiClient.post('/donations', { poolId, amount, tokenAddress });
 }
 
 export async function closePool(

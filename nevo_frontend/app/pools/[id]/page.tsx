@@ -14,6 +14,12 @@ import { useWalletStore } from '@/src/store/walletStore';
 import { closePool, submitSignedXdr } from '@/lib/api-client';
 import { signTransaction } from '@stellar/freighter-api';
 
+// Testnet XLM native contract address (same as api-client)
+const TESTNET_XLM_CONTRACT =
+  'CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC';
+
+type WithdrawStep = 'idle' | 'creating' | 'signing' | 'submitting';
+
 interface TimelineEvent {
   id: string;
   label: string;

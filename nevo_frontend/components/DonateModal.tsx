@@ -117,7 +117,7 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
       const hash = await submitSignedXdr(signResult.signedTxXdr);
 
       const donation = {
-        id: hash,
+        id: `mock-${Date.now()}`,
         poolId: pool.id,
         poolName: pool.title,
         amount,
@@ -126,6 +126,7 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
         timestamp: new Date().toISOString(),
         status: 'confirmed' as const,
       };
+
       addDonation(donation);
       setTxHash(hash);
       setLastTxHash(hash);
@@ -133,8 +134,6 @@ export function DonateModal({ pool, onClose }: DonateModalProps) {
     } catch (err) {
       console.error(err);
       const msg = err instanceof Error ? err.message : 'Transaction failed.';
-
-      // Customize error message based on common failures
       if (
         msg.toLowerCase().includes('cancel') ||
         msg.toLowerCase().includes('reject') ||

@@ -12,6 +12,8 @@ import { Nonce } from './nonce.entity';
 
 @Module({
   imports: [
+    ConfigModule,
+    PassportModule,
     TypeOrmModule.forFeature([Nonce]),
     PassportModule,
     JwtModule.register({
@@ -24,5 +26,6 @@ import { Nonce } from './nonce.entity';
   ],
   providers: [AuthService, NonceService, JwtStrategy],
   controllers: [AuthController],
+  exports: [JwtStrategy],
 })
 export class AuthModule {}

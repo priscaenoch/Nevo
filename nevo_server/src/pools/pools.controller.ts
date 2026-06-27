@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { PoolsService } from './pools.service';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetPoolsDto } from './dto/get-pools.dto';
 import {
   DonationSortBy,
@@ -43,6 +44,8 @@ export interface WithdrawDto {
   requesterWallet: string;
 }
 
+export interface ClosePoolDto {
+  requesterWallet: string;
 export interface DonateDto {
   amount: number;
   tokenAddress: string;
@@ -94,6 +97,19 @@ export class PoolsController {
     return this.poolsService.buildWithdrawTx(pool);
   }
 
+  @UseGuards(JwtAuthGuard)
+  @Post(':id/close')
+  async close(
+    @Param('id') id: string,
+    @Request() req: { user: { publicKey: string } },
+  ) {
+    const pool = await this.poolsService.findByContractId(id);
+    if (!pool) throw new NotFoundException('Pool not found');
+    if (pool.creatorWallet !== req.user.publicKey)
+      throw new ForbiddenException('Only the pool creator may close this pool');
+    return this.poolsService.buildClosePoolTx(pool);
+  }
+}
   @Get(':id/donations')
   getDonations(@Param('id') id: string, @Query('sortBy') sortBy?: string) {
     const sort: DonationSortBy = sortBy === 'largest' ? 'largest' : 'newest';
