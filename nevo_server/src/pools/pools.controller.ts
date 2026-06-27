@@ -13,7 +13,7 @@ import {
   Req,
   UseGuards,
 } from '@nestjs/common';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { PoolsService } from './pools.service';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { GetPoolsDto } from './dto/get-pools.dto';
@@ -46,6 +46,8 @@ export interface WithdrawDto {
 
 export interface ClosePoolDto {
   requesterWallet: string;
+}
+
 export interface DonateDto {
   amount: number;
   tokenAddress: string;
@@ -101,7 +103,7 @@ export class PoolsController {
   @Post(':id/close')
   async close(
     @Param('id') id: string,
-    @Request() req: { user: { publicKey: string } },
+    @Req() req: { user: { publicKey: string } },
   ) {
     const pool = await this.poolsService.findByContractId(id);
     if (!pool) throw new NotFoundException('Pool not found');
@@ -109,7 +111,7 @@ export class PoolsController {
       throw new ForbiddenException('Only the pool creator may close this pool');
     return this.poolsService.buildClosePoolTx(pool);
   }
-}
+
   @Get(':id/donations')
   getDonations(@Param('id') id: string, @Query('sortBy') sortBy?: string) {
     const sort: DonationSortBy = sortBy === 'largest' ? 'largest' : 'newest';
@@ -137,3 +139,4 @@ export class PoolsController {
     return { unsignedXdr };
   }
 }
+
