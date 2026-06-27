@@ -527,3 +527,15 @@ export async function submitSignedXdr(
 ): Promise<{ txHash: string }> {
   return apiClient.post<{ txHash: string }>('/transactions/submit', { xdr });
 }
+
+export async function closePool(
+  poolId: string | number
+): Promise<{ unsignedXdr: string }> {
+  return apiClient.post<{ unsignedXdr: string }>(
+    `/pools/${poolId}/close`,
+    undefined,
+    {
+      requireAuth: true,
+    }
+  );
+}
