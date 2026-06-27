@@ -5,7 +5,12 @@ import { useWalletStore } from '@/src/store/walletStore';
 import { Avatar } from '@/components/Avatar';
 import { Button } from '@/components/Button';
 import { WalletAddress } from '@/components/WalletAddress';
-import { fetchMyProfile, type ApiProfile } from '@/lib/api-client';
+import {
+  fetchMyProfile,
+  updateProfile,
+  type ApiProfile,
+} from '@/lib/api-client';
+import { toast } from '@/components/Toast';
 
 interface UserPreferences {
   email: string;
@@ -34,10 +39,13 @@ export default function ProfilePage() {
     useState<UserPreferences>(DEFAULT_PREFERENCES);
   const [isEditingProfile, setIsEditingProfile] = useState(false);
   const [profile, setProfile] = useState<ApiProfile | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let active = true;
     fetchMyProfile()
       .then((data) => {
+        if (!active) return;
         setProfile(data);
         setPreferences((p) => ({
           ...p,
@@ -48,29 +56,14 @@ export default function ProfilePage() {
               : ''),
         }));
       })
-      .catch(() => {
-        // API unavailable — keep defaults
-      });
-  }, []);
-
-  useEffect(() => {
-    let active = true;
-    async function loadProfile() {
-      setIsLoading(true);
-      try {
-        const data = await fetchMyProfile();
-        if (active) {
-          setPreferences(data);
-        }
-      } catch (err) {
+      .catch((err) => {
         console.error('Failed to load profile:', err);
-      } finally {
+      })
+      .finally(() => {
         if (active) {
           setIsLoading(false);
         }
-      }
-    }
-    loadProfile();
+      });
     return () => {
       active = false;
     };
@@ -91,10 +84,18 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSaveProfile = (e: React.FormEvent<HTMLFormElement>) => {
+  const handleSaveProfile = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    // TODO: Save to backend
-    setIsEditingProfile(false);
+    try {
+      const updated = await updateProfile(preferences.displayName);
+      setProfile(updated);
+      toast('Profile updated successfully');
+      setIsEditingProfile(false);
+    } catch (err) {
+      const msg =
+        err instanceof Error ? err.message : 'Failed to update profile';
+      toast(msg, 'error');
+    }
   };
 
   const toggleNotification = (key: keyof UserPreferences['notifications']) => {
@@ -348,36 +349,11 @@ export default function ProfilePage() {
               </a>
             </div>
             <div className="space-y-3">
-              {(
-                [] as {
-                  id: string;
-                  type: string;
-                  amount: string;
-                  asset: string;
-                  recipient: string;
-                  date: string;
-                }[]
-              ).map((tx) => (
-                <div
-                  key={tx.id}
-                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-[var(--color-surface-raised)] transition-colors"
-                >
-                  <div
-                    className={`flex size-9 items-center justify-center rounded-full ${
-                      tx.type === 'donation'
-                        ? 'bg-brand-100 text-brand-600'
-                        : tx.type === 'pool_creation'
-                          ? 'bg-warning-light text-warning-dark'
-                          : 'bg-success-light text-success-dark'
-                    }`}
-                  >
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      strokeWidth={1.5}
-                      stroke="currentColor"
-                      className="size-4"
+              {isLoading
+                ? Array.from({ length: 3 }).map((_, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center gap-4 p-3 rounded-xl animate-pulse"
                     >
                       <div className="size-9 rounded-full bg-gray-200 dark:bg-gray-700 shrink-0" />
                       <div className="flex-1 space-y-2">
@@ -386,7 +362,6 @@ export default function ProfilePage() {
                           <div className="h-4 w-16 bg-gray-200 dark:bg-gray-700 rounded" />
                         </div>
                         <div className="h-3 w-40 bg-gray-200 dark:bg-gray-700 rounded" />
-                        <div className="h-3 w-12 bg-gray-200 dark:bg-gray-700 rounded" />
                       </div>
                     </div>
                   ))
