@@ -1,9 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { Donation } from './donation.entity.js';
-
-export type DonationSortBy = 'newest' | 'largest';
 
 @Injectable()
 export class DonationsService {
