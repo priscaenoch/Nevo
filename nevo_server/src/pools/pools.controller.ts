@@ -9,7 +9,6 @@ import {
   ParseIntPipe,
   Patch,
   Post,
-  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -59,7 +58,6 @@ interface JwtPayload {
 export class PoolsController {
   constructor(
     private readonly poolsService: PoolsService,
-    private readonly donationsService: DonationsService,
     private readonly contractService: ContractService,
   ) {}
 

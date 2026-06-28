@@ -269,7 +269,6 @@ function buildDefaultFilters(pools: Pool[]): FilterState {
 
 export default function BrowsePoolsPage() {
   const { pools, loading, error, fetchPools } = usePoolsStore();
-  const hasFetched = useRef(false);
   useEffect(() => {
     fetchPools();
   }, [fetchPools]);
@@ -283,14 +282,6 @@ export default function BrowsePoolsPage() {
   const hasHydrated = useRef(false);
   const [filters, setFilters] = useState<FilterState>(defaultFilters);
   const [searchInput, setSearchInput] = useState(defaultFilters.search);
-
-  useEffect(() => {
-    if (hasFetched.current) {
-      fetchPools(filters);
-    } else {
-      hasFetched.current = true;
-    }
-  }, [filters, fetchPools]);
 
   useEffect(() => {
     const timeout = window.setTimeout(() => {
