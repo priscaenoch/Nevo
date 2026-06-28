@@ -9,6 +9,7 @@ import {
   resolveRateLimitOptions,
 } from './rate-limit';
 import { getStoredAccessToken } from './jwt-storage';
+import { toast } from '../components/Toast';
 
 export type HttpMethod = 'GET' | 'POST' | 'PUT' | 'DELETE' | 'PATCH';
 
@@ -34,6 +35,13 @@ export class ApiError extends Error {
   ) {
     super(message);
     this.name = 'ApiError';
+  }
+}
+
+export class UnauthorizedError extends ApiError {
+  constructor(message: string, data?: unknown) {
+    super(401, message, data);
+    this.name = 'UnauthorizedError';
   }
 }
 
@@ -396,6 +404,9 @@ export class ApiClient {
                 toast('Something went wrong. Please try again.', 'error');
               }
             }
+            if (response.status === 401) {
+              throw new UnauthorizedError(response.statusText, errorData);
+            }
             throw new ApiError(response.status, response.statusText, errorData);
           }
 
@@ -550,4 +561,16 @@ export async function closePool(
       requireAuth: true,
     }
   );
+}
+
+export function verifyAuthSignature(
+  publicKey: string,
+  nonce: string,
+  signature: string
+): Promise<{ accessToken: string }> {
+  return apiClient.post<{ accessToken: string }>('/auth/verify', {
+    publicKey,
+    signature,
+    message: nonce,
+  });
 }

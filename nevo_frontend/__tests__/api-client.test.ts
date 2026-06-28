@@ -1,4 +1,9 @@
-import { ApiClient, RateLimitError } from '@/lib/api-client';
+import {
+  ApiClient,
+  RateLimitError,
+  verifyAuthSignature,
+  UnauthorizedError,
+} from '@/lib/api-client';
 
 function jsonResponse(data: unknown, init: ResponseInit = {}) {
   const status = init.status ?? 200;
@@ -193,6 +198,59 @@ describe('ApiClient rate limiting', () => {
       retryAfterMs: 5_000,
       status: 429,
     });
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('verifyAuthSignature', () => {
+  beforeEach(() => {
+    Object.defineProperty(globalThis, 'Headers', {
+      value: TestHeaders,
+      configurable: true,
+    });
+    global.fetch = jest.fn();
+  });
+
+  afterEach(() => {
+    jest.restoreAllMocks();
+  });
+
+  it('calls POST /auth/verify with JSON body and returns accessToken', async () => {
+    const mockTokenResponse = { accessToken: 'mock-access-token' };
+    (global.fetch as jest.Mock).mockResolvedValue(
+      jsonResponse(mockTokenResponse)
+    );
+
+    const result = await verifyAuthSignature('publicKey', 'nonce', 'signature');
+
+    expect(result).toEqual(mockTokenResponse);
+    expect(global.fetch).toHaveBeenCalledTimes(1);
+
+    const [url, fetchInit] = (global.fetch as jest.Mock).mock.calls[0];
+    expect(url).toContain('/auth/verify');
+    expect(fetchInit.method).toBe('POST');
+    expect(JSON.parse(fetchInit.body)).toEqual({
+      publicKey: 'publicKey',
+      signature: 'signature',
+      message: 'nonce',
+    });
+  });
+
+  it('throws UnauthorizedError when API returns 401', async () => {
+    (global.fetch as jest.Mock).mockResolvedValue(
+      jsonResponse(
+        { error: 'Unauthorized' },
+        {
+          status: 401,
+          statusText: 'Unauthorized',
+        }
+      )
+    );
+
+    await expect(
+      verifyAuthSignature('publicKey', 'nonce', 'signature')
+    ).rejects.toBeInstanceOf(UnauthorizedError);
+
     expect(global.fetch).toHaveBeenCalledTimes(1);
   });
 });
