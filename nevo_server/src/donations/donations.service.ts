@@ -1,4 +1,43 @@
 import { Injectable } from '@nestjs/common';
 
 @Injectable()
-export class DonationsService {}
+export class DonationsService {
+  constructor(
+    @InjectRepository(Donation)
+    private readonly donationRepo: Repository<Donation>,
+  ) {}
+
+  async findByPool(
+    poolId: string,
+    sortBy: DonationSortBy = 'newest',
+  ): Promise<Donation[]> {
+    if (sortBy === 'largest') {
+      return this.donationRepo
+        .createQueryBuilder('d')
+        .where('d.poolId = :poolId', { poolId })
+        .orderBy('CAST(d.amount AS NUMERIC)', 'DESC')
+        .getMany();
+    }
+    return this.donationRepo.find({
+      where: { poolId },
+      order: { createdAt: 'DESC' },
+    });
+  }
+
+  async findByDonor(
+    donorWallet: string,
+    sortBy: DonationSortBy = 'newest',
+  ): Promise<Donation[]> {
+    if (sortBy === 'largest') {
+      return this.donationRepo
+        .createQueryBuilder('d')
+        .where('d.donorWallet = :donorWallet', { donorWallet })
+        .orderBy('CAST(d.amount AS NUMERIC)', 'DESC')
+        .getMany();
+    }
+    return this.donationRepo.find({
+      where: { donorWallet },
+      order: { createdAt: 'DESC' },
+    });
+  }
+}

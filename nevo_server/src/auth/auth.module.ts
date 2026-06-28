@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -15,6 +16,8 @@ import { Nonce } from './nonce.entity';
     ConfigModule,
     PassportModule,
     TypeOrmModule.forFeature([Nonce]),
+    PassportModule,
+    TypeOrmModule.forFeature([Nonce]),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -29,5 +32,6 @@ import { Nonce } from './nonce.entity';
   ],
   providers: [AuthService, NonceService, JwtStrategy],
   controllers: [AuthController],
+  exports: [JwtStrategy],
 })
 export class AuthModule {}
