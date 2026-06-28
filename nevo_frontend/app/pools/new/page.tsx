@@ -334,21 +334,6 @@ function CreatePoolPageContent() {
       setSubmitting(false);
       setSubmitStep('idle');
     }
-    try {
-      await createPool({
-        title: form.title,
-        description: form.description,
-        category: form.category,
-        goalAmount: form.goalAmount,
-        duration: form.duration,
-        imageUrl: form.imageUrl,
-        tags: form.tags,
-      });
-    } catch {
-      // TODO: surface error to user once error UI is designed
-    }
-    setSubmitting(false);
-    setSubmitted(true);
   }
 
   if (submitted) {
